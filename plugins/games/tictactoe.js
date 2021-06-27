@@ -178,7 +178,8 @@ module.exports = {
                 fields: [
                     {
                         name: "Commands",
-                        value: "**Ⓜ️ eset (emoji)** - Set your own custom emoji marker"
+                        value: "`🎲 play` Play tic-tac-toe against Robonokah" +
+                            "\n`Ⓜ️ eset (emoji)` Set your own custom emoji marker"
                     }
                 ]
             }))
