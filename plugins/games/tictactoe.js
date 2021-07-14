@@ -1,18 +1,25 @@
 let discord = require("discord.js")
 
-let userEmojis = {
-    "455903710212784128": "🦊"
-}
-
+let userEmojis = {}
 let runningGame = null
+
+function getIcon(user) {
+    let profile = userEmojis[user.id]
+    if (profile == null) return "❌"
+    if (profile.discord) return `:${profile.icon}:`
+    else return profile.icon
+}
 
 module.exports = {
     name: "ttt",
+    startup(client) {
+        this.client = client
+        client.writeConfig("ttt", "userEmojis", null, {})
+        userEmojis = this.config.userEmojis
+    },
     execute(message, args) {
         if (args.length > 0) {
             let command = args.shift()
-
-            if (!userEmojis[message.author.id]) userEmojis[message.author.id] = "❌" // default
 
             try {
                 switch (command) {
@@ -35,7 +42,7 @@ module.exports = {
 
                         message.channel.send(new discord.MessageEmbed({
                             title: "Tic-Tac-Toe",
-                            description: ("❌ **" + message.author.tag + "** ⚔️ **Robonokah#4118** ⭕").replace(/❌/g, userEmojis[message.author.id]),
+                            description: ("❌ **" + message.author.tag + "** ⚔️ **Robonokah#4118** ⭕").replace(/❌/g, getIcon(message.author)),
                             color: "#03fce8",
                         }))
 
@@ -50,7 +57,7 @@ module.exports = {
                     case "test":
                         message.channel.send(new discord.MessageEmbed({
                             title: "Tic-Tac-Toe",
-                            description: ("❌ **" + message.author.tag + "** ⚔️ **Robonokah#4118** ⭕").replace(/❌/g, userEmojis["455903710212784128"]),
+                            description: ("❌ **" + message.author.tag + "** ⚔️ **Robonokah#4118** ⭕").replace(/❌/g, userEmojis["455903710212784128"].icon),
                             color: "#03fce8",
                         }))
                         message.channel.send("⭕❌⭕\n4️⃣❌6️⃣\n7️⃣8️⃣❌".replace(/❌/g, userEmojis["455903710212784128"])).then(board => {
@@ -68,16 +75,22 @@ module.exports = {
                         })
                         break
                     case "eset":
-                        if (args.length < 1) throw "Ⓜ️ You must specify an emoji"
+                        if (args.length < 1) {
+                            message.channel.send(new discord.MessageEmbed({
+                                author: { name: getIcon(message.author) + " " + message.author.tag, iconURL: message.author.avatarURL() },
+                                description: `Your current emoji is ${getIcon(message.author)}`,
+                                color: "#03fce8",
+                            }))
+                            break
+                        }
 
                         let emoji = args[0]
-                        userEmojis[message.author.id] = emoji
+                        let useDiscord = (args[1] == "true") ? true : false // use discord version of emoji instead (ex. canada flag, CA -> flag_ca)
+                        userEmojis[message.author.id] = { icon: emoji, discord: useDiscord }
+                        this.client.writeConfig("ttt", "userEmojis", userEmojis)
 
                         message.channel.send(new discord.MessageEmbed({
-                            author: {
-                                name: emoji + " " + message.author.tag,
-                                iconURL: message.author.avatarURL()
-                            },
+                            author: { name: getIcon(message.author) + " " + message.author.tag, iconURL: message.author.avatarURL() },
                             description: "Your emoji has been updated!",
                             color: "#03fce8",
                         }))
@@ -87,33 +100,33 @@ module.exports = {
                         let spot = parseInt(command) - 1
                         let selection = runningGame[spot]
                         if (spot + 1 < 1 || spot + 1 > 9) throw "🎲 Invalid selection, must be 1-9"
-                        if (selection == "⭕" || selection == userEmojis[message.author.id]) throw "🎲 That spot has already been taken!"
+                        if (selection == "⭕" || selection == getIcon(message.author)) throw "🎲 That spot has already been taken!"
 
-                        runningGame[spot] = userEmojis[message.author.id]
+                        runningGame[spot] = getIcon(message.author)
 
                         let botWin = false
                         let playerWin = false
 
                         // row
-                        if (runningGame[0] == runningGame[1] && runningGame[0] == runningGame[2] && runningGame[1] == userEmojis[message.author.id]
-                            || runningGame[3] == runningGame[4] && runningGame[3] == runningGame[5] && runningGame[3] == userEmojis[message.author.id]
-                            || runningGame[6] == runningGame[7] && runningGame[6] == runningGame[8] && runningGame[6] == userEmojis[message.author.id]) playerWin = true
+                        if (runningGame[0] == runningGame[1] && runningGame[0] == runningGame[2] && runningGame[1] == getIcon(message.author)
+                            || runningGame[3] == runningGame[4] && runningGame[3] == runningGame[5] && runningGame[3] == getIcon(message.author)
+                            || runningGame[6] == runningGame[7] && runningGame[6] == runningGame[8] && runningGame[6] == getIcon(message.author)) playerWin = true
 
                         // cross
-                        if (runningGame[0] == runningGame[3] && runningGame[0] == runningGame[6] && runningGame[0] == userEmojis[message.author.id]
-                            || runningGame[1] == runningGame[4] && runningGame[1] == runningGame[7] && runningGame[1] == userEmojis[message.author.id]
-                            || runningGame[2] == runningGame[5] && runningGame[2] == runningGame[8] && runningGame[2] == userEmojis[message.author.id]) playerWin = true
+                        if (runningGame[0] == runningGame[3] && runningGame[0] == runningGame[6] && runningGame[0] == getIcon(message.author)
+                            || runningGame[1] == runningGame[4] && runningGame[1] == runningGame[7] && runningGame[1] == getIcon(message.author)
+                            || runningGame[2] == runningGame[5] && runningGame[2] == runningGame[8] && runningGame[2] == getIcon(message.author)) playerWin = true
 
                         // diagonal
-                        if (runningGame[0] == runningGame[4] && runningGame[0] == runningGame[8] && runningGame[0] == userEmojis[message.author.id]
-                            || runningGame[2] == runningGame[4] && runningGame[2] == runningGame[6] && runningGame[2] == userEmojis[message.author.id]) playerWin = true
+                        if (runningGame[0] == runningGame[4] && runningGame[0] == runningGame[8] && runningGame[0] == getIcon(message.author)
+                            || runningGame[2] == runningGame[4] && runningGame[2] == runningGame[6] && runningGame[2] == getIcon(message.author)) playerWin = true
 
                         // move to separate array to make it faster lol
                         while (true) { // bot move
                             if (playerWin) break
                             let randomNum = Math.floor(Math.random() * 9)
                             let botMove = runningGame[randomNum]
-                            if (botMove == "⭕" || botMove == userEmojis[message.author.id]) continue
+                            if (botMove == "⭕" || botMove == getIcon(message.author)) continue
 
                             runningGame[randomNum] = "⭕"
                             break
@@ -136,20 +149,20 @@ module.exports = {
 
                         let count = 0
                         for (let i = 0; i != 9; i++) {
-                            if (runningGame[i] == "⭕" || runningGame[i] == userEmojis[message.author.id]) count += 1
+                            if (runningGame[i] == "⭕" || runningGame[i] == getIcon(message.author)) count += 1
                         }
 
 
                         let embed = new discord.MessageEmbed({
                             title: "Tic-Tac-Toe",
-                            description: ("❌ **" + message.author.tag + "** ⚔️ **Robonokah#4118** ⭕").replace(/❌/g, userEmojis[message.author.id]),
+                            description: ("❌ **" + message.author.tag + "** ⚔️ **Robonokah#4118** ⭕").replace(/❌/g, getIcon(message.author)),
                             color: "#03fce8",
                         })
 
                         let kill = false
                         if (botWin || playerWin || count == 9) {
                             if (botWin) embed.setAuthor("⭕ Robonokah#4118", "https://i.imgur.com/osYUUmY.png")
-                            else if (playerWin) embed.setAuthor(userEmojis[message.author.id] + " " + message.author.tag + " claims victory!", message.author.avatarURL())
+                            else if (playerWin) embed.setAuthor(getIcon(message.author) + " " + message.author.tag + " claims victory!", message.author.avatarURL())
                             else embed.setAuthor("🤷 Nobody wins, you're both losers!")
                             kill = true
                         }
@@ -179,7 +192,7 @@ module.exports = {
                     {
                         name: "Commands",
                         value: "`🎲 play` Play tic-tac-toe against Robonokah" +
-                            "\n`Ⓜ️ eset (emoji)` Set your own custom emoji marker"
+                            "\n`Ⓜ️ eset (emoji) [discordtoggle]` Set your own custom emoji marker"
                     }
                 ]
             }))

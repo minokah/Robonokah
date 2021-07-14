@@ -14,7 +14,8 @@ module.exports = {
                     name: "Utilities",
                     value: "`☄️ xiv` Search for stuff from Final Fantasy XIV" +
                         "\n`🎲 ttt` Play tic-tac-toe" +
-                        "\n`🎲 ghub` Join a room and play minigames with (or against) people!" +
+                        //"\n`🎲 ghub` Join a room and play minigames with (or against) people!" +
+                        "\n`🧮 math` Do math operations" +
                         "\n`🎧❗ fakedfn` Stop deafening and sitting a call please"
                 }
             ]
