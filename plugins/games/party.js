@@ -32,7 +32,7 @@ module.exports = {
                         description: "Waiting for the host to start...",
                         color: "#7bed9f",
                         fields: [
-                            { name: "🎲 General⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", value: "`Game` None selected\n\n`Room Size` 8\n`Room Privacy` Open", inline: true },
+                            { name: "🎲 General⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", value: "**Game** None selected\n\n**Room Size** 8\n**Room Privacy** Open", inline: true },
                             { name: "😀 Members", value: `🦊 ${message.client.users.cache.get("455903710212784128")}\n🤖 ${message.client.users.cache.get("835745420705660968")}\n☄️ Meteor\n🦄 Unicorn\n🐊 Crocodile\n🐋 \`CLANTAG\` Whale\n\`1 Available Slot\``, inline: true },
                         ]
                     }))

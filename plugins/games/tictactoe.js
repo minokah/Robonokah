@@ -1,6 +1,7 @@
 let discord = require("discord.js")
 
 let userEmojis = {}
+let profiles = {}
 let runningGame = null
 
 function getIcon(user) {
@@ -16,6 +17,7 @@ module.exports = {
         this.client = client
         client.writeConfig("ttt", "userEmojis", null, {})
         userEmojis = this.config.userEmojis
+        profiles = this.config.profiles
     },
     execute(message, args) {
         if (args.length > 0) {
@@ -95,6 +97,16 @@ module.exports = {
                             color: "#03fce8",
                         }))
                         break
+                    case "me": {
+                        message.channel.send(new discord.MessageEmbed({
+                            title: `${getIcon(message.author)} ${message.author.tag}`,
+                            thumbnail: { url: message.author.avatarURL() },
+                            description: "Custom description goes here",
+                            color: "#03fce8",
+                            fields: [{name: "🏆 Win - Loss", value: profiles[message.author.id] != null ? `**${profiles[message.author.id].win}** - ${profiles[message.author.id].loss}` : "No Data"}]
+                        }))
+                        break
+                    }
                     default:
                         if (runningGame == null) throw "🎲 No game is currently running"
                         let spot = parseInt(command) - 1
@@ -161,9 +173,17 @@ module.exports = {
 
                         let kill = false
                         if (botWin || playerWin || count == 9) {
-                            if (botWin) embed.setAuthor("⭕ Robonokah#4118", "https://i.imgur.com/osYUUmY.png")
-                            else if (playerWin) embed.setAuthor(getIcon(message.author) + " " + message.author.tag + " claims victory!", message.author.avatarURL())
+                            profiles[message.author.id] = { win: profiles[message.author.id] != null ? profiles[message.author.id].win : 0, loss: profiles[message.author.id] != null ? profiles[message.author.id].loss : 0 }
+                            if (botWin) {
+                                embed.setAuthor("⭕ Robonokah#4118 claims victory!", "https://i.imgur.com/osYUUmY.png")
+                                profiles[message.author.id].loss = profiles[message.author.id].loss + 1
+                            }
+                            else if (playerWin) {
+                                embed.setAuthor(getIcon(message.author) + " " + message.author.tag + " claims victory!", message.author.avatarURL())
+                                profiles[message.author.id].win = profiles[message.author.id].win + 1
+                            }
                             else embed.setAuthor("🤷 Nobody wins, you're both losers!")
+                            this.client.writeConfig("ttt", "profiles", profiles)
                             kill = true
                         }
 
@@ -192,7 +212,8 @@ module.exports = {
                     {
                         name: "Commands",
                         value: "`🎲 play` Play tic-tac-toe against Robonokah" +
-                            "\n`Ⓜ️ eset (emoji) [discordtoggle]` Set your own custom emoji marker"
+                            "\n`Ⓜ️ eset (emoji) [discordtoggle]` Set your own custom emoji marker" +
+                            "\n`🧑 me\` View own player card"
                     }
                 ]
             }))

@@ -12,15 +12,17 @@
 */
 
 module.exports = {
-    pagify(embed, message, desc, pages, current, prev = null) {
+    pagify(embed, message, desc, current, pages, prev = null) {
         let footer = "•  "
         pages.forEach(data => {
             if (data.emoji == current) {
                 if (data.desc != null && data.desc) embed.setDescription(desc)
                 else embed.setDescription("")
                 footer += `[ ${data.emoji}${data.name} ]  • `
-                embed.spliceFields(0, 25)
-                embed.addFields(data.fields)
+                if (data.fields != null) {
+                    embed.spliceFields(0, 25)
+                    embed.addFields(data.fields)
+                }
             }
             else footer += `${data.emoji} ${data.name}  • `
         })
@@ -28,31 +30,34 @@ module.exports = {
 
         if (prev == null) {
             message.channel.send(embed).then(msg => {
-                pages.forEach(data => {
-                    msg.react(data.emoji).then(() => {
-                        return
-                    })
-                })
-
-                let filter = (reaction, user) => {
-                    let keys = []
-                    pages.forEach(data => keys.push(data.emoji))
-                    return keys.includes(reaction.emoji.name) && user.id === message.author.id;
-                }
-
-                msg.awaitReactions(filter, { max: 1, time: 3600000, errors: ['time'] }).then(collected => {
-                    try {
-                        pages.forEach(data => {
-                            if (collected.first().emoji.name == data.emoji) {
-                                this.pagify(embed, message, desc, pages, data.emoji, msg)
-                                throw null
-                            }
+                if (Object.keys(pages).length > 1) {
+                    pages.forEach(data => {
+                        msg.react(data.emoji).then(() => {
+                            return
                         })
-                    }
-                    catch { }
+                    })
 
-                })
-                    .catch(() => msg.reactions.removeAll())
+
+                    let filter = (reaction, user) => {
+                        let keys = []
+                        pages.forEach(data => keys.push(data.emoji))
+                        return keys.includes(reaction.emoji.name) && user.id === message.author.id;
+                    }
+
+                    msg.awaitReactions(filter, { max: 1, time: 3600000, errors: ['time'] }).then(collected => {
+                        try {
+                            pages.forEach(data => {
+                                if (collected.first().emoji.name == data.emoji) {
+                                    this.pagify(embed, message, desc, data.emoji, pages, msg)
+                                    throw null
+                                }
+                            })
+                        }
+                        catch { }
+
+                    })
+                        .catch(() => msg.reactions.removeAll())
+                }
             })
         }
         else {
@@ -69,7 +74,7 @@ module.exports = {
                 try {
                     pages.forEach(data => {
                         if (collected.first().emoji.name == data.emoji) {
-                            this.pagify(embed, message, desc, pages, data.emoji, msg)
+                            this.pagify(embed, message, desc, data.emoji, pages, msg)
                             throw null
                         }
                     })
