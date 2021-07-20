@@ -1,4 +1,4 @@
-# Robonokah
+# ![](https://i.imgur.com/RjYXxlX.png)
  
 * My personal Discord bot!
 * More information about each feature is on the wiki
