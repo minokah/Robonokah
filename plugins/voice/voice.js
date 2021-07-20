@@ -19,13 +19,14 @@ module.exports = {
                                 footer: { text: message.member.user.tag, iconURL: message.member.user.avatarURL() },
                             }))
                         }
+                        else throw "You are not in a voice channel!"
 
                         break
                     }
                 }
             }
-            catch {
-
+            catch (error) {
+                message.channel.send(new discord.MessageEmbed({ title: "🎧 Voice", color: "#ff0000", description: error.message != null ? error.message : error }))
             }
         }
         else message.channel.send(new discord.MessageEmbed({

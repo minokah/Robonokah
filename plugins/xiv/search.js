@@ -67,23 +67,28 @@ let categoryList = {
     37: { name: "Hands", emoji: "🧤" },
     39: { name: "Waist", emoji: "👖" },
     36: { name: "Legs", emoji: "👖" },
-    36: { name: "Feet", emoji: "👟" },
+    38: { name: "Feet", emoji: "👟" },
 
     // Crafted
     44: { emoji: "🧪" }, // ALC
     46: { emoji: "🍔" }, // CUL
     48: { emoji: ":rock:" }, // ???
     49: { emoji: "🔨" }, // BSM
+
+    // Other
+    81: { name: "Minion", emoji: "🧸" }
 }
 
 let craftJobList = {
-    9: "BSM",
-    8: "CRP",
-    10: "ARM",
-    14: "ALC",
-    15: "CUL",
-    6: "Conjurer/White Mage",
-    32: "Dark Knight",
+    9: { long: "Blacksmith", short: "BSM" },
+    8: { long: "Carpenter", short: "CRP" },
+    10: { long: "Armorer", short: "ARM" },
+    11: { long: "Leatherworker", short: "LTW" },
+    14: { long: "Alchemist", short: "ALC" },
+    15: { long: "Culinarian", short: "CUL" },
+    6: { long: "Conjurer/White Mage", short: "CNJ WHM" },
+    32: { long: "Dark Knight", short: "DRK" },
+    33: { long: "Astrologian", short: "AST" },
 }
 
 let achievementCategories = {
@@ -169,6 +174,7 @@ module.exports = {
                                         })
 
                                         if (results.length <= 0) throw "No results found! Check your search terms or filters"
+                                        else if (results.length == 1) this.execute(message, [results[0].type, results[0].id])
                                         else {
                                             let baseEmbed = new discord.MessageEmbed({
                                                 title: `🔍 ${args.join(" ")}`,
@@ -304,7 +310,7 @@ module.exports = {
                                         // crafting
                                         let craftingDesc = ""
 
-                                        recieved.item.craft.forEach(job => craftingDesc += `**${craftJobList[job.job] != null ? craftJobList[job.job] : job.job}** Lv.${job.lvl}\n`)
+                                        recieved.item.craft.forEach(job => craftingDesc += `**${craftJobList[job.job] != null ? craftJobList[job.job].short : job.job}** Lv.${job.lvl}\n`)
 
                                         // ingredients
                                         let ingredientDesc = ""
@@ -329,7 +335,7 @@ module.exports = {
                                         let attributes = Object.keys(recieved.item.attr.action)
                                         attributes.forEach(attr => attrDesc += `**${attr}** +${recieved.item.attr.action[attr].rate}%\n`)
                                         attrDesc += "\n"
-                                        attributes.forEach(attr => attrDesc += `**HQ ${attr}** +${recieved.item.attr_hq.action[attr].rate}%\n`)
+                                        attributes.forEach(attr => attrDesc += `<:hq:866486713107218453>** ${attr}** +${recieved.item.attr_hq.action[attr].rate}%\n`)
 
                                         embedFields.push({ name: "Effects", emoji: "🌟", fields: { name: "🌟 Effects", value: attrDesc, inline: true }, desc: false })
                                     }
@@ -354,37 +360,43 @@ module.exports = {
                             let recieved = ""
                             response.on("data", data => recieved += data)
                             response.on("end", () => {
-                                recieved = JSON.parse(recieved)
-                                console.log(recieved)
+                                try {
+                                    recieved = JSON.parse(recieved)
+                                    console.log(recieved)
 
-                                let baseEmbed = new discord.MessageEmbed({
-                                    title: `🌟 ${recieved.action.name}`, color: "#03fce8",
-                                    thumbnail: { url: `https://garlandtools.org/files/icons/action/${recieved.action.icon}.png` }
-                                })
+                                    let baseEmbed = new discord.MessageEmbed({
+                                        title: `🌟 ${recieved.action.name}`, color: "#03fce8",
+                                        thumbnail: { url: `https://garlandtools.org/files/icons/action/${recieved.action.icon}.png` }
+                                    })
 
-                                let desc = `${recieved.action.description != null ? parser.replacehtml(recieved.action.description, htmlToReplace, true) : "*No description*"}`
+                                    let desc = `${recieved.action.description != null ? parser.replacehtml(recieved.action.description, htmlToReplace, true) : "*No description*"}`
 
-                                let generalDesc = ""
-                                let spellDesc = ""
+                                    let generalDesc = ""
+                                    let spellDesc = ""
 
-                                generalDesc += `**${craftJobList[recieved.action.job] != null ? craftJobList[recieved.action.job] : (recieved.action.job == null ? "Other" : recieved.action.job)}** Lv. ${recieved.action.lvl} Action\n`
-                                if (recieved.action.gcd != null) generalDesc += "**GCD**"
-                                else generalDesc += "**Off GCD**"
-                                if (recieved.action.cast != null) spellDesc += `**Cast** ${recieved.action.cast != 0 ? recieved.action.cast : "Instant"}\n`
-                                if (recieved.action.recast != null) spellDesc += `**Recast** ${recieved.action.recast != 0 ? recieved.action.recast / 1000 + "s" : "Instant"}\n`
-                                if (recieved.action.cost != null) spellDesc += `**${recieved.action.resource} Cost** ${recieved.action.cost}\n`
-                                if (recieved.action.range != null) spellDesc += `**Range** ${recieved.action.range}y\n`
+                                    generalDesc += `**${craftJobList[recieved.action.job] != null ? craftJobList[recieved.action.job].long : (recieved.action.job == null ? "Other" : recieved.action.job)}** Lv. ${recieved.action.lvl} Action\n`
+                                    if (recieved.action.gcd != null) generalDesc += "**GCD**"
+                                    else generalDesc += "**Off GCD**"
+                                    if (recieved.action.cast != null) spellDesc += `**Cast** ${recieved.action.cast != 0 ? recieved.action.cast : "Instant"}\n`
+                                    if (recieved.action.recast != null) spellDesc += `**Recast** ${recieved.action.recast != 0 ? recieved.action.recast / 1000 + "s" : "Instant"}\n`
+                                    if (recieved.action.cost != null) spellDesc += `**${recieved.action.resource} Cost** ${recieved.action.cost}\n`
+                                    if (recieved.action.range != null) spellDesc += `**Range** ${recieved.action.range}y\n`
 
-                                pagify.pagify(baseEmbed, message, desc, "✨", [
-                                    {
-                                        name: "Ability/Spell", emoji: "✨",
-                                        fields: [
-                                            { name: "📖 General", value: generalDesc, inline: true },
-                                            { name: "✨ Ability/Spell", value: spellDesc, inline: true }
-                                        ],
-                                        desc: true
-                                    }
-                                ])
+                                    pagify.pagify(baseEmbed, message, desc, "✨", [
+                                        {
+                                            name: "Ability/Spell", emoji: "✨",
+                                            fields: [
+                                                { name: "📖 General", value: generalDesc, inline: true },
+                                                { name: "✨ Ability/Spell", value: spellDesc, inline: true }
+                                            ],
+                                            desc: true
+                                        }
+                                    ])
+                                }
+                                catch (error) {
+                                    message.channel.send(new discord.MessageEmbed({ title: "🌟 Action Lookup", color: "#ff0000", description: `Sorry! There was a problem displaying that\n\n${error.message}` }))
+                                    console.log(error)
+                                }
                             })
                         })
                         break
@@ -397,22 +409,28 @@ module.exports = {
                             let recieved = ""
                             response.on("data", data => recieved += data)
                             response.on("end", () => {
-                                recieved = JSON.parse(recieved)
-                                console.log(recieved)
+                                try {
+                                    recieved = JSON.parse(recieved)
+                                    console.log(recieved)
 
-                                let baseEmbed = new discord.MessageEmbed({
-                                    title: `🏆 ${recieved.achievement.name}`, color: "#03fce8",
-                                    thumbnail: { url: `https://garlandtools.org/files/icons/achievement/${recieved.achievement.icon}.png` }
-                                })
+                                    let baseEmbed = new discord.MessageEmbed({
+                                        title: `🏆 ${recieved.achievement.name}`, color: "#03fce8",
+                                        thumbnail: { url: `https://garlandtools.org/files/icons/achievement/${recieved.achievement.icon}.png` }
+                                    })
 
-                                let achfields = [{ name: "💠 Points", value: recieved.achievement.points, inline: true }]
-                                if (recieved.partials != null) recieved.partials.forEach(item => achfields.push({ name: "🎁 Reward", value: `\`${item.id}\` ${item.obj.n}`, inline: true }))
-                                if (recieved.achievement.title != null) achfields.push({ name: "🔰 Title Obtained", value: recieved.achievement.title, inline: true })
+                                    let achfields = [{ name: "💠 Points", value: recieved.achievement.points, inline: true }]
+                                    if (recieved.partials != null) recieved.partials.forEach(item => achfields.push({ name: "🎁 Reward", value: `\`${item.id}\` ${item.obj.n}`, inline: true }))
+                                    if (recieved.achievement.title != null) achfields.push({ name: "🔰 Title Obtained", value: recieved.achievement.title, inline: true })
 
-                                pagify.pagify(baseEmbed, message, recieved.achievement.description, "",
-                                    [
-                                        { name: achievementCategories[recieved.achievement.category] != null ? achievementCategories[recieved.achievement.category] : recieved.achievement.category, emoji: "", fields: achfields, desc: true }
-                                    ])
+                                    pagify.pagify(baseEmbed, message, recieved.achievement.description, "",
+                                        [
+                                            { name: achievementCategories[recieved.achievement.category] != null ? achievementCategories[recieved.achievement.category] : recieved.achievement.category, emoji: "", fields: achfields, desc: true }
+                                        ])
+                                }
+                                catch (error) {
+                                    message.channel.send(new discord.MessageEmbed({ title: "🏆 Achievement Lookup", color: "#ff0000", description: `Sorry! There was a problem displaying that\n\n${error.message}` }))
+                                    console.log(error)
+                                }
                             })
                         })
                         break
@@ -425,50 +443,82 @@ module.exports = {
                             let recieved = ""
                             response.on("data", data => recieved += data)
                             response.on("end", () => {
-                                recieved = JSON.parse(recieved)
-                                console.log(recieved)
+                                try {
+                                    recieved = JSON.parse(recieved)
+                                    console.log(recieved)
 
-                                let baseEmbed = new discord.MessageEmbed({
-                                    title: `🏡 ${recieved.instance.name}`, color: "#03fce8",
-                                    thumbnail: { url: `https://garlandtools.org/files/icons/instance/type/${recieved.instance.categoryIcon}.png` },
-                                    image: { url: `https://garlandtools.org/files/icons/instance/${recieved.instance.fullIcon}.png` }
-                                })
+                                    let baseEmbed = new discord.MessageEmbed({
+                                        title: `🏡 ${recieved.instance.name}`, color: "#03fce8",
+                                        thumbnail: { url: `https://garlandtools.org/files/icons/instance/type/${recieved.instance.categoryIcon}.png` },
+                                    })
 
-                                let embedFields = []
-                                let mainFields = [{ name: "💠 Information", value: `**Level ${recieved.instance.min_lvl} ${recieved.instance.category}**\n${recieved.instance.min_ilvl != null ? `**Item Level** ${recieved.instance.min_ilvl}\n` : ""}**Time** ${recieved.instance.time} minutes`, inline: true }]
+                                    let embedFields = []
+                                    let mainFields = [{ name: "💠 Information", value: `**Level ${recieved.instance.min_lvl} ${recieved.instance.category}**\n${recieved.instance.min_ilvl != null ? `**Item Level** ${recieved.instance.min_ilvl}\n` : ""}**Time** ${recieved.instance.time} minutes`, inline: true }]
 
-                                if (recieved.instance.rewards != null) {
-                                    let rewardsDesc = ""
+                                    if (recieved.instance.rewards != null) {
+                                        let rewardsDesc = ""
 
-                                    recieved.partials.forEach(partial => {
-                                        if (partial.type == "item") {
-                                            recieved.instance.rewards.forEach(item => {
-                                                if (item == partial.id) rewardsDesc += `\`${item}\` ${partial.obj.n}\n`
-                                            });
-                                        }
-                                    });
+                                        recieved.partials.forEach(partial => {
+                                            if (partial.type == "item") {
+                                                recieved.instance.rewards.forEach(item => {
+                                                    if (item == partial.id) rewardsDesc += `\`${item}\` ${partial.obj.n}\n`
+                                                });
+                                            }
+                                        });
 
-                                    if (rewardsDesc != "") mainFields.push({ name: `🎁 Possible Rewards`, value: rewardsDesc, inline: true })
+                                        if (rewardsDesc != "") mainFields.push({ name: `🎁 Possible Rewards`, value: rewardsDesc, inline: true })
+                                    }
+                                    mainFields.push({ name: "👥 Party", value: `<:tank:866470965751971890> x ${recieved.instance.category == "Trials" ? "2" : "1"}\n<:healer:866470993252712458> x ${recieved.instance.healer}\n<:dps:866471014505250877> x ${recieved.instance.melee + recieved.instance.ranged}\n`, inline: true })
+                                    embedFields.push({ name: recieved.instance.category, emoji: "🏡", fields: mainFields, desc: true })
+
+                                    if (recieved.instance.coffers != null) {
+                                        let cofferFields = []
+
+                                        recieved.instance.coffers.forEach(coffer => {
+                                            let items = ""
+                                            coffer.items.forEach(item => {
+                                                recieved.partials.forEach(partial => {
+                                                    if (item == partial.id) items += `\`${item}\` ${partial.obj.n}\n`
+                                                });
+                                            })
+                                            cofferFields.push({ name: `📌 ${coffer.coords.join(", ")}`, value: items, inline: true })
+                                        })
+
+                                        if (cofferFields.length > 0) embedFields.push({ name: "Treasure", emoji: "👑", fields: cofferFields, desc: false })
+                                    }
+
+                                    if (recieved.instance.fights != null) {
+                                        let bossFields = []
+
+                                        recieved.instance.fights.forEach(boss => {
+                                            let loot = ""
+
+                                            // loot
+                                            if (boss.coffer != null) {
+                                                boss.coffer.items.forEach(item => {
+                                                    recieved.partials.forEach(partial => {
+                                                        if (partial.type == "item" && item == partial.id) loot += `\`${item}\` ${partial.obj.n}\n`
+                                                    })
+                                                })
+                                            }
+
+                                            // boss name
+                                            recieved.partials.forEach(partial => {
+                                                if (partial.type == "mob" && boss.mobs[0] == partial.id) bossFields.push({ name: `${boss.type == "Boss" ? "☠️" : "💀"} ${partial.obj.n}`, value: loot != "" ? loot : "*No Loot*", inline: true })
+                                            })
+                                        })
+
+                                        if (bossFields.length > 0) embedFields.push({ name: "Bosses", emoji: "👊", fields: bossFields, desc: false })
+                                    }
+
+                                    message.channel.send(`https://garlandtools.org/files/icons/instance/${recieved.instance.fullIcon}.png`)
+                                    pagify.pagify(baseEmbed, message, parser.replacehtml(recieved.instance.description, htmlToReplace), "🏡", embedFields)
+
                                 }
-                                mainFields.push({ name: "👥 Party", value: `🛡️ x ${recieved.instance.category == "Trials" ? "2" : "1"}\n💉 x ${recieved.instance.healer}\n⚔️ x ${recieved.instance.melee + recieved.instance.ranged}\n`, inline: true })
-                                embedFields.push({ name: recieved.instance.category, emoji: "🏡", fields: mainFields, desc: true })
-                                embedFields.push({ name: "Treasure", emoji: "👑", fields: [{ name: "Treasure", value: "TBA" }], desc: false })
-
-                                if (recieved.instance.fights != null) {
-                                    let bossFields = []
-
-                                    recieved.partials.forEach(partial => {
-                                        if (partial.type == "mob") {
-                                            recieved.instance.fights.forEach(boss => {
-                                                if (boss.mobs[0] == partial.id) bossFields.push({ name: `${boss.type == "Boss" ? "☠️" : "💀"} ${partial.obj.n}`, value: "TBA", inline: true })
-                                            });
-                                        }
-                                    });
-
-                                    if (bossFields.length > 0) embedFields.push({ name: "Bosses", emoji: "👊", fields: bossFields, desc: false })
+                                catch (error) {
+                                    message.channel.send(new discord.MessageEmbed({ title: "🏡 Instance Lookup", color: "#ff0000", description: `Sorry! There was a problem displaying that\n\n${error.message}` }))
+                                    console.log(error)
                                 }
-
-                                pagify.pagify(baseEmbed, message, parser.replacehtml(recieved.instance.description, htmlToReplace), "🏡", embedFields)
                             })
                         })
                         break
@@ -481,54 +531,118 @@ module.exports = {
                             let recieved = ""
                             response.on("data", data => recieved += data)
                             response.on("end", () => {
-                                recieved = JSON.parse(recieved)
-                                console.log(recieved)
+                                try {
+                                    recieved = JSON.parse(recieved)
+                                    console.log(recieved)
 
-                                let baseEmbed = new discord.MessageEmbed({
-                                    title: `🔥 ${recieved.quest.name}`, color: "#03fce8",
-                                    thumbnail: { url: `https://garlandtools.org/files/icons/event/${recieved.quest.eventIcon}.png` },
-                                    image: { url: `https://garlandtools.org/files/icons/quest/${recieved.quest.icon}.png` }
-                                })
+                                    let baseEmbed = new discord.MessageEmbed({
+                                        title: `🔥 ${recieved.quest.name}`, color: "#03fce8",
+                                        thumbnail: { url: `https://garlandtools.org/files/icons/event/${recieved.quest.eventIcon}.png` },
+                                    })
 
-                                let fields = [{ name: `💠 Level ${recieved.quest.reqs.jobs[0].lvl}`, value: recieved.quest.location, inline: true }]
+                                    let fields = [{ name: `💠 Information`, value: `**Level ${recieved.quest.reqs.jobs[0].lvl}**\n${recieved.quest.location}`, inline: true }]
 
-                                if (recieved.quest.reward != null) {
-                                    let unlockDesc = ""
-                                    let rewardsDesc = ""
+                                    if (recieved.quest.reward != null) {
+                                        let unlockDesc = ""
+                                        let rewardsDesc = ""
 
-                                    recieved.partials.forEach(partial => {
-                                        if (recieved.quest.reward[partial.type] != null) {
-                                            if (partial.type == "instance") unlockDesc += `\`${partial.obj.t}\` ${partial.obj.n}\n`
+                                        recieved.partials.forEach(partial => {
+                                            if (recieved.quest.reward[partial.type] != null) {
+                                                if (partial.type == "instance") unlockDesc += `\`${partial.obj.t}\` ${partial.obj.n}\n`
+                                            }
+
+                                            if (partial.type == "item" && recieved.quest.reward.items != null) {
+                                                recieved.quest.reward.items.forEach(item => {
+                                                    if (item.id == partial.id) rewardsDesc += `\`${item.id}\` ${partial.obj.n}\n`
+                                                });
+                                            }
+                                        });
+
+                                        if (recieved.quest.reward.gil != null) rewardsDesc += `<:gil:866367940517560390> ${recieved.quest.reward.gil} gil\n`
+                                        if (recieved.quest.reward.xp != null && recieved.quest.reward.xp != 0) rewardsDesc += `<:exp:866906264788009021> ${recieved.quest.reward.xp} xp\n`
+
+                                        if (unlockDesc != "") fields.push({ name: "🔓 Unlocks", value: unlockDesc, inline: true })
+                                        if (rewardsDesc != "") fields.push({ name: `🎁 Rewards`, value: rewardsDesc, inline: true })
+                                    }
+
+                                    let journalFields = ""
+                                    let entriesAdded = 0
+                                    for (let i = 0; i != recieved.quest.journal.length; i++) {
+                                        if (journalFields.length + recieved.quest.journal[i].length < 1000) {
+                                            journalFields += `• ${recieved.quest.journal[i]}\n`
+                                            entriesAdded += 1
                                         }
+                                        else break
+                                    }
+                                    if (recieved.quest.journal.length - entriesAdded > 0) journalFields += `**... and ${recieved.quest.journal.length - entriesAdded} more entries**`
+                                    journalFields = parser.replacehtml(journalFields, htmlToReplace)
 
-                                        if (partial.type == "item") {
-                                            recieved.quest.reward.items.forEach(item => {
-                                                if (item.id == partial.id) rewardsDesc += `\`${item.id}\` ${partial.obj.n}\n`
-                                            });
-                                        }
-                                    });
+                                    let objFields = ""
+                                    recieved.quest.objectives.forEach(obj => objFields += `• ${obj}\n`)
 
-                                    if (recieved.quest.reward.gil != null) rewardsDesc += `<:gil:866367940517560390> ${recieved.quest.reward.gil} gil\n`
-                                    if (recieved.quest.reward.xp != null) rewardsDesc += `<:exp:866368726373761084> ${recieved.quest.reward.xp} xp\n`
-
-                                    if (unlockDesc != "") fields.push({ name: "🔓 Unlocks", value: unlockDesc, inline: true })
-                                    if (rewardsDesc != "") fields.push({ name: `🎁 Rewards`, value: rewardsDesc, inline: true })
+                                    message.channel.send(`https://garlandtools.org/files/icons/quest/${recieved.quest.icon}.png`)
+                                    pagify.pagify(baseEmbed, message, parser.replacehtml(recieved.quest.journal[0], htmlToReplace), "🔥",
+                                        [
+                                            { name: recieved.quest.eventIcon == 71201 ? "Main Scenario Quest" : "Quest", emoji: "🔥", fields: fields, desc: true },
+                                            { name: "Journal", emoji: "📗", fields: [{ name: "📗 Journal", value: journalFields }], desc: false },
+                                            { name: "Objectives", emoji: "🎯", fields: [{ name: "🎯 Objectives", value: objFields }], desc: false }
+                                        ])
                                 }
+                                catch (error) {
+                                    message.channel.send(new discord.MessageEmbed({ title: "🔥 Quest Lookup", color: "#ff0000", description: `Sorry! There was a problem displaying that\n\n${error.message}` }))
+                                    console.log(error)
+                                }
+                            })
+                        })
+                        break
+                    }
+                    case "leve": {
+                        if (args.length <= 0) throw "You must include a search term"
+                        if (isNaN(args[0])) throw "Your ID must be an integer"
 
-                                let journalFields = ""
-                                for (let i = 0; i != 2; i++) journalFields += `• ${recieved.quest.journal[i]}\n`
-                                if (recieved.quest.journal.length > 2) journalFields += `**... and ${recieved.quest.journal.length - 2} more entries**`
-                                journalFields = parser.replacehtml(journalFields, htmlToReplace)
+                        https.get(`https://www.garlandtools.org/db/doc/leve/en/3/${args[0]}.json`, response => {
+                            let recieved = ""
+                            response.on("data", data => recieved += data)
+                            response.on("end", () => {
+                                try {
+                                    recieved = JSON.parse(recieved)
+                                    console.log(recieved)
 
-                                let objFields = ""
-                                recieved.quest.objectives.forEach(obj => objFields += `• ${obj}\n`)
+                                    let baseEmbed = new discord.MessageEmbed({
+                                        title: `🔥 ${recieved.leve.name}`, color: "#03fce8",
+                                    })
 
-                                pagify.pagify(baseEmbed, message, parser.replacehtml(recieved.quest.journal[0], htmlToReplace), "🏡",
-                                    [
-                                        { name: recieved.quest.eventIcon == 71201 ? "Main Scenario Quest" : "Quest", emoji: "🔥", fields: fields, desc: true },
-                                        { name: "Journal", emoji: "📗", fields: [{ name: "📗 Journal", value: journalFields }], desc: false },
-                                        { name: "Objectives", emoji: "🎯", fields: [{ name: "🎯 Objectives", value: objFields }], desc: false }
-                                    ])
+                                    let embedFields = []
+
+                                    let leveFields = []
+                                    leveFields.push({ name: "💠 Information", value: `**${craftJobList[recieved.leve.jobCategory] != null ? craftJobList[recieved.leve.jobCategory].long : recieved.leve.jobCategory} Level ${recieved.leve.lvl}**`, inline: true })
+                                    if (recieved.leve.coords != null) leveFields.push({ name: `📌 (${recieved.leve.coords.join(", ")})`, value: "Location Name", inline: true })
+                                    embedFields.push({ name: "Levequest", emoji: "📑", fields: leveFields, desc: true })
+
+                                    if (recieved.reward != null) {
+                                        let lootDesc = ""
+                                        let lootCount = 0
+                                        recieved.rewards.entries.forEach(entry => {
+                                            recieved.partials.forEach(partial => {
+                                                if (entry.item == partial.id) {
+                                                    if (lootDesc.length + partial.obj.n.length < 1000 && lootCount <= 10) {
+                                                        lootDesc += `\`${partial.id}\` ${partial.obj.n}\n`
+                                                        lootCount += 1
+                                                    }
+                                                }
+                                            })
+                                        })
+                                        if (Object.keys(recieved.rewards.entries).length - lootCount > 0) lootDesc += `**... and ${Object.keys(recieved.rewards.entries).length - lootCount} more entries**`
+                                        embedFields.push({ name: "Potential Loot", emoji: "🎁", fields: { name: "🎁 Potential Loot", value: lootDesc }, desc: false })
+                                    }
+
+                                    message.channel.send(`https://garlandtools.org/files/icons/leve/area/${recieved.leve.areaicon}.png`)
+                                    pagify.pagify(baseEmbed, message, parser.replacehtml(recieved.leve.description, htmlToReplace), "📑", embedFields)
+                                }
+                                catch (error) {
+                                    message.channel.send(new discord.MessageEmbed({ title: "📑 Levequest Lookup", color: "#ff0000", description: `Sorry! There was a problem displaying that\n\n${error.message}` }))
+                                    console.log(error)
+                                }
                             })
                         })
                         break
@@ -545,7 +659,7 @@ module.exports = {
             fields: [
                 {
                     name: "With a type and ID, you can search using `^xiv (type) (id)`",
-                    value: "`🗺️ map` `🔍 search` `📦 item` `🌟 action` `🏆 achievement` `🏡 instance` `🔥 quest`"
+                    value: "`🗺️ map` `🔍 search` `📦 item` `🌟 action` `🏆 achievement` `🏡 instance` `🔥 quest` `📑 leve"
                 },
                 {
                     name: "Commands",
