@@ -12,14 +12,32 @@
 */
 
 module.exports = {
-    pagify(embed, message, desc, current, pages, prev = null) {
+    pagify(embed, message, current, pages, prev = null) {
         let footer = "•  "
+        if (current == "top") current = pages[0].emoji
         pages.forEach(data => {
             if (data.emoji == current) {
-                if (data.desc != null && data.desc) embed.setDescription(desc)
+                if (data.desc != null) embed.setDescription(data.desc)
                 else embed.setDescription("")
+                if (data.image != null) embed.setImage(data.image)
+                else embed.setImage("")
                 footer += `[ ${data.emoji}${data.name} ]  • `
                 if (data.fields != null) {
+                    if (data.fields.length != null) {
+
+                        // add padding at the bottom of a line if it ends with \n
+                        for (let i = 0; i != data.fields.length; i++) {
+                            if (data.fields[i].value[data.fields[i].value.length - 1] != "⠀") {
+                                if (data.fields[i].value[data.fields[i].value.length - 1] == '\n') data.fields[i].value = data.fields[i].value += "⠀"
+                                else data.fields[i].value = data.fields[i].value += "\n⠀"
+                            }
+                        }
+                    }
+                    else if (data.fields.value[data.fields.value.length - 1] != "⠀") {
+                        if (data.fields.value[data.fields.value.length - 1] == '\n') data.fields.value = data.fields.value += "⠀"
+                        else data.fields.value = data.fields.value += "\n⠀"
+                    }
+
                     embed.spliceFields(0, 25)
                     embed.addFields(data.fields)
                 }
@@ -48,7 +66,7 @@ module.exports = {
                         try {
                             pages.forEach(data => {
                                 if (collected.first().emoji.name == data.emoji) {
-                                    this.pagify(embed, message, desc, data.emoji, pages, msg)
+                                    this.pagify(embed, message, data.emoji, pages, msg)
                                     throw null
                                 }
                             })
@@ -74,7 +92,7 @@ module.exports = {
                 try {
                     pages.forEach(data => {
                         if (collected.first().emoji.name == data.emoji) {
-                            this.pagify(embed, message, desc, data.emoji, pages, msg)
+                            this.pagify(embed, message, data.emoji, pages, msg)
                             throw null
                         }
                     })

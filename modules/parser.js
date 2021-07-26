@@ -1,3 +1,6 @@
+let https = require("https")
+let http = require("http")
+
 module.exports = {
     /* 
         parse parameters
@@ -8,7 +11,7 @@ module.exports = {
             "table": {}
         }
     */
-    parseparams(args) {
+    parseparams(args, lower = true) {
         let paramList = {}
 
         args.forEach((arg, i) => {
@@ -17,8 +20,11 @@ module.exports = {
                 arg = arg.replace("[", "").replace("]", "")
                 arg = arg.split(",")
                 for (let v = 0; v != arg.length; v++) {
-                    let value = arg[v].split(":")
-                    paramList[value[0]] = value[1]
+                    if (arg[v] != "") {
+                        let value = arg[v].split(":")
+                        if (lower) paramList[value[0].toLowerCase()] = (value[1] != null) ? value[1].toLowerCase() : null
+                        else paramList[value[0]] = value[1]
+                    }
                 }
             }
         })
@@ -34,5 +40,26 @@ module.exports = {
         tuples.forEach(arr => str = str.replace(arr[0], (arr[1] != null) ? arr[1] : ""))
         if (all) str = str.replace(/(<([^>]+)>)/g, "") // replace all html tags afterwards
         return str
+    },
+
+    /*
+        reqget
+        - url
+    */
+    reqget(url) {
+        let type = null
+        if (url.startsWith("https")) type = https
+        else if (url.startsWith("http")) type = http
+
+        return new Promise(resolve => {
+            type.get(url, response => {
+                let recieved = ""
+                response.on("data", data => recieved += data)
+                response.on("end", () => {
+                    try { resolve(JSON.parse(recieved)) }
+                    catch { resolve(null) }
+                })
+            })
+        })
     }
 }
