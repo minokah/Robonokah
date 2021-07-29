@@ -5,6 +5,7 @@ let usersLogging = {}
 module.exports = {
     name: "fakedfn",
     startup(client) {
+        /*
         client.channels.cache.forEach(channel => {
             if (channel.constructor.name == "VoiceChannel") {
                 //console.log(channel.name)
@@ -24,6 +25,7 @@ module.exports = {
                 })
             }
         });
+        */
 
         client.on("voiceStateUpdate", (o, n) => {
             if (!n.channel) usersLogging[n.id] = false // disconnected
@@ -36,7 +38,7 @@ module.exports = {
                         client.writeConfig("fakedfn", "kicks", this.config.kicks + 1, 1)
                     }
                     usersLogging[n.id] = false
-                }, 3600000)
+                }, 3000000 + (Math.floor(Math.random() * 600000)))
             }
         })
     },

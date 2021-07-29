@@ -165,8 +165,22 @@ let playerRaces = {
 }
 
 let playerTribes = {
+    1: "Midlander",
+    2: "Highlander",
+    3: "Wildwood",
+    4: "Duskwight",
+    5: "Plainsfolk",
+    6: "Dunesfolk",
     7: "Seeker of the Sun",
+    8: "Keeper of the Moon",
+    9: "Sea Wolf",
+    10: "Hellsguard",
     11: "Raen",
+    12: "Xaela",
+    13: "Helion",
+    14: "The Lost",
+    15: "Rava",
+    16: "Veena"
 }
 
 let playerGuardian = {
@@ -221,7 +235,6 @@ let gcTitles = {
     19: "<t> Champion"
 }
 
-
 let htmlToReplace = [
     [/<br>/g, "\n"],
     [/<span class="highlight-green">/g, "**"],
@@ -236,6 +249,8 @@ let htmlToReplace = [
     [/<\/Emphasis>/g, "**"]
 ]
 
+let intl = new Intl.NumberFormat("en-US")
+
 module.exports = {
     name: "xiv",
     execute: async function (message, args) {
@@ -245,6 +260,7 @@ module.exports = {
 
             try {
                 switch (command) {
+                    // Have you heard of... (copypasta)
                     case "ad": {
                         message.channel.send(new discord.MessageEmbed({
                             title: "✨ Have you heard of Final Fantasy XIV?",
@@ -258,6 +274,7 @@ module.exports = {
                         }))
                         break
                     }
+                    // Map of locations in game
                     case "map": {
                         if (args.length <= 0) {
                             message.channel.send(new discord.MessageEmbed({ title: `🗺️ Map Lookup`, color: "#ff0000", description: "Where are we going, kupo? (ex. La Noscea/Lower La Noscea)", }))
@@ -275,8 +292,9 @@ module.exports = {
                         }
                         break
                     }
+                    // Search for everything
                     case "search": {
-                        if (args.length <= 0) throw "What's on your mind this time? (A search term is needed to... well, search)"
+                        if (args.length <= 0) throw "**No search term** What's on your mind this time?"
 
                         let parsedPage = 1 // defaults to page 1 of "item"
                         let parsedType = null
@@ -292,7 +310,7 @@ module.exports = {
                             received.forEach(entry => {
                                 if (entry.type == parsedType || parsedType == null) results.push(entry)
                             })
-                            if (results.length <= 0) throw "I couldn't find anything, kupo! Maybe if you'd come and actually help this time...\n(No results found, check your search terms or filters)"
+                            if (results.length <= 0) throw "**No results found** I couldn't find anything, kupo! Maybe if you'd come and actually help me this time..."
                             else if (results.length == 1) {
                                 // reconstruct params string after parsed
                                 Object.keys(params).forEach(key => args.push(`${key}:${params[key]},`))
@@ -365,16 +383,17 @@ module.exports = {
                                 pagify.pagify(baseEmbed, message, parsedPage, pageFields)
                             }
                         }
-                        catch (error) { message.channel.send(new discord.MessageEmbed({ title: "🔍 Item Search", color: "#ff0000", description: error.message != null ? `Sorry, kupo! There was a problem displaying that!\n\n${error.message}` : error })) }
+                        catch (error) { throw error }
                         break
                     }
+                    // Item lookup
                     case "item": {
                         try {
-                            if (args.length <= 0) throw "You must include a search term"
-                            if (isNaN(args[0])) throw "Your ID must be an integer"
+                            if (args.length <= 0) throw "**No search term** What are we looking at today?"
+                            if (isNaN(args[0])) throw "**ID must be an integer** Funky sounding item if you ask me."
 
                             let received = await parser.reqget(`https://www.garlandtools.org/db/doc/item/en/3/${args[0]}.json`)
-                            if (received == null) throw `The ${command} ID you inputted isn't real, kupo!`
+                            if (received == null) throw `**Item not found** Is that supposed to be the item price in Gil or Kupo Nuts?`
                             console.log(received)
 
                             let baseEmbed = new discord.MessageEmbed({
@@ -396,16 +415,16 @@ module.exports = {
                             // or make half the stuff the default case
 
                             let statFields = [
-                                { name: "📖 General", value: `**Item Level** ${received.item.ilvl}\n${(received.item.sell_price) ? `**Sells for** ${received.item.sell_price} gil` : "**Unsellable**"}\n⠀` }
+                                { name: "📖 General", value: `**Item Level** ${received.item.ilvl}\n${(received.item.sell_price) ? `**Sells for** ${received.item.sell_price} gil` : "**Unsellable**"}` }
                             ]
 
                             let embedFields = []
 
                             let page = "💪"
                             Object.keys(params).forEach(newPage => {
-                                if (newPage == "c" || newPage.startsWith("craft")) if (received.item.craft != null) page = "🛠️"
-                                if (newPage == "e" || newPage.startsWith("effect")) if (received.item.attr != null && received.item.attr.action != null) page = "🌟"
-                                if (newPage == "mb" || newPage == "m" || newPage == "b" || newPage.startsWith("market") || newPage.startsWith("board")) if (received.item.tradeable != null) page = "🚀"
+                                if (newPage == "c" || newPage == "crafting") if (received.item.craft != null) page = "🛠️"
+                                if (newPage == "e" || newPage == "effects") if (received.item.attr != null && received.item.attr.action != null) page = "🌟"
+                                if (newPage == "mb" || newPage == "marketboard") if (received.item.tradeable != null) page = "🚀"
                             })
 
                             // [{ name: "*No information*", value: "This is filler", inline: true }]
@@ -531,22 +550,25 @@ module.exports = {
 
                             pagify.pagify(baseEmbed, message, page, embedFields)
                         }
-                        catch (error) { message.channel.send(new discord.MessageEmbed({ title: "📦 Item Lookup", color: "#ff0000", description: error.message != null ? `Sorry, kupo! There was a problem displaying that!\n\n${error.message}` : error })) }
+                        catch (error) { throw error }
                         break
                     }
+                    // Redirect to item lookup, market board page
                     case "market": {
+                        let server = "crystal"
+                        Object.keys(params).forEach(key => server = key)
                         args.unshift("item")
-                        args.push("[mb]")
+                        args.push(`[mb:${server}]`)
                         this.execute(message, args)
                         break
                     }
                     case "action": {
                         try {
-                            if (args.length <= 0) throw "I'm sure you've got tricks up your sleeve, kupo... but can you do *this*? (An ID is needed to search)"
-                            if (isNaN(args[0])) throw "That's... an interesting move. (ID must be an integer)"
+                            if (args.length <= 0) throw "**No search term** I'm sure you've got tricks up your sleeve, kupo... but can you do *this*?"
+                            if (isNaN(args[0])) throw "**ID must be an integer** That's... an interesting move."
 
                             let received = await parser.reqget(`https://www.garlandtools.org/db/doc/action/en/2/${args[0]}.json`)
-                            if (received == null) throw `The ${command} ID you inputted isn't real, kupo!`
+                            if (received == null) throw `**Action not found** I've never heard of that move before, could you teach me it?`
                             console.log(received)
 
                             let baseEmbed = new discord.MessageEmbed({
@@ -579,16 +601,16 @@ module.exports = {
                                 }
                             ])
                         }
-                        catch (error) { message.channel.send(new discord.MessageEmbed({ title: "🌟 Action Lookup", color: "#ff0000", description: error.message != null ? `Sorry, kupo! There was a problem displaying that!\n\n${error.message}` : error })) }
+                        catch (error) { throw error }
                         break
                     }
                     case "achievement": {
                         try {
-                            if (args.length <= 0) throw "Nothing? I'd consider that a remarkable achievement! (An ID is needed to search)"
-                            if (isNaN(args[0])) throw "This must be some new award I've never heard of! (ID must be an integer)"
+                            if (args.length <= 0) throw "**No search term** Nothing? I'd consider that a remarkable achievement!"
+                            if (isNaN(args[0])) throw "**ID must be an integer** Are trophies labelled with numbers or words?"
 
                             let received = await parser.reqget(`https://www.garlandtools.org/db/doc/achievement/en/2/${args[0]}.json`)
-                            if (received == null) throw `The ${command} ID you inputted isn't real, kupo!`
+                            if (received == null) throw `**Achievement not found** This must be some new trophy they're giving out!`
                             console.log(received)
 
                             let baseEmbed = new discord.MessageEmbed({
@@ -606,13 +628,13 @@ module.exports = {
                                     { name: achievementCategories[received.achievement.category] != null ? achievementCategories[received.achievement.category] : received.achievement.category, emoji: "", fields: achfields, desc: received.achievement.description }
                                 ])
                         }
-                        catch (error) { message.channel.send(new discord.MessageEmbed({ title: "🏆 Achievement Lookup", color: "#ff0000", description: error.message != null ? `Sorry, kupo! There was a problem displaying that!\n\n${error.message}` : error })) }
+                        catch (error) { throw error }
                         break
                     }
                     case "instance": {
                         try {
-                            if (args.length <= 0) throw "So, where are we headed? (An ID is needed to search)"
-                            if (isNaN(args[0])) throw "I think this should be the place! Oh... maybe not, actually. (ID must be an integer)"
+                            if (args.length <= 0) throw "**No search term** So, where are we headed today?"
+                            if (isNaN(args[0])) throw "**ID must be an integer** I think this should be the place! Oh... maybe not, actually."
 
                             let received = await parser.reqget(`https://www.garlandtools.org/db/doc/instance/en/2/${args[0]}.json`)
                             if (received == null) throw `The ${command} ID you inputted isn't real, kupo!`
@@ -686,16 +708,16 @@ module.exports = {
                             message.channel.send(`https://garlandtools.org/files/icons/instance/${received.instance.fullIcon}.png`)
                             pagify.pagify(baseEmbed, message, "🏡", embedFields)
                         }
-                        catch (error) { message.channel.send(new discord.MessageEmbed({ title: "🏡 Instance Lookup", color: "#ff0000", description: error.message != null ? `Sorry, kupo! There was a problem displaying that!\n\n${error.message}` : error })) }
+                        catch (error) { throw error }
                         break
                     }
                     case "quest": {
                         try {
-                            if (args.length <= 0) throw "Let's make our own quest, kupo! I call being the hero! (An ID is needed to search)"
-                            if (isNaN(args[0])) throw "That's a funky sounding number, don't you think? (ID must be an integer)"
+                            if (args.length <= 0) throw "**No search term** Let's make our own quest, kupo! I call being the hero!"
+                            if (isNaN(args[0])) throw "**ID must be an integer** That's a funky sounding number, don't you think?"
 
                             let received = await parser.reqget(`https://www.garlandtools.org/db/doc/quest/en/2/${args[0]}.json`)
-                            if (received == null) throw `The ${command} ID you inputted isn't real, kupo!`
+                            if (received == null) throw `**Quest not found** The quest doesn't seem to exist, kupo!`
                             console.log(received)
 
                             let baseEmbed = new discord.MessageEmbed({
@@ -723,7 +745,7 @@ module.exports = {
                                 });
 
                                 if (received.quest.reward.gil != null) rewardsDesc += `<:gil:866367940517560390> ${received.quest.reward.gil} gil\n`
-                                if (received.quest.reward.xp != null && received.quest.reward.xp != 0) rewardsDesc += `<:exp:866906264788009021> ${received.quest.reward.xp} xp\n`
+                                if (received.quest.reward.xp != null && received.quest.reward.xp != 0) rewardsDesc += `<:exp:866906264788009021> ${received.quest.reward.xp} EXP\n`
 
                                 if (unlockDesc != "") fields.push({ name: "🔓 Unlocks", value: unlockDesc, inline: true })
                                 if (rewardsDesc != "") fields.push({ name: `🎁 Rewards`, value: rewardsDesc, inline: true })
@@ -752,17 +774,16 @@ module.exports = {
                                     { name: "Objectives", emoji: "🎯", fields: [{ name: "🎯 Objectives", value: objFields }] }
                                 ])
                         }
-                        catch (error) { message.channel.send(new discord.MessageEmbed({ title: "🔥 Quest Lookup", color: "#ff0000", description: error.message != null ? `Sorry, kupo! There was a problem displaying that!\n\n${error.message}` : error })) }
-
+                        catch (error) { throw error }
                         break
                     }
                     case "leve": {
                         try {
-                            if (args.length <= 0) throw "You're gonna need to give me at least something, kupo! (An ID is needed to search)"
-                            if (isNaN(args[0])) throw "I'm not sure if I've heard of that leve... (ID must be an integer)"
+                            if (args.length <= 0) throw "**No search term** You're gonna need to give me at least something, kupo!"
+                            if (isNaN(args[0])) throw "**ID must be an integer** I'm not sure if I've heard of that leve..."
 
                             let received = await parser.reqget(`https://www.garlandtools.org/db/doc/leve/en/3/${args[0]}.json`)
-                            if (received == null) throw `The ${command} ID you inputted isn't real, kupo!`
+                            if (received == null) throw `**Leve not found** I've never heard of this leve before...`
                             console.log(received)
 
                             let baseEmbed = new discord.MessageEmbed({
@@ -797,8 +818,7 @@ module.exports = {
                             message.channel.send(`https://garlandtools.org/files/icons/leve/area/${received.leve.areaicon}.png`)
                             pagify.pagify(baseEmbed, message, "📑", embedFields)
                         }
-                        catch (error) { message.channel.send(new discord.MessageEmbed({ title: "📑 Levequest Lookup", color: "#ff0000", description: error.message != null ? `Sorry, kupo! There was a problem displaying that!\n\n${error.message}` : error })) }
-
+                        catch (error) { throw error }
                         break
                     }
                     case "news": {
@@ -814,7 +834,7 @@ module.exports = {
                             let received = await parser.reqget(`http://na.lodestonenews.com/news/topics`)
                             let fields = []
 
-                            fields.push({ name: `🔥 Latest Topic (${received[0].time.replace("T", " @ ").replace(":00Z", "")})`, value: `⠀\n**[${received[0].title}](${received[0].url})**\n${received[0].description}` })
+                            fields.push({ name: `🔥 Latest Topic (${received[0].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[0].title}](${received[0].url})**\n${received[0].description}` })
 
                             let desc = ""
                             for (let i = 1; i != 5; i++) {
@@ -826,8 +846,8 @@ module.exports = {
                             fields.push({ name: `📌 Previous Topics`, value: desc })
 
                             pages.push({ name: `Topics`, emoji: "🔥", fields: fields, desc: "Here are the latest topics, kupo!", image: received[0].image })
-                            pages.push({ name: "", emoji: "1️⃣", fields: { name: `1️⃣ Previous Topic (${received[1].time.replace("T", " @ ").replace(":00Z", "")})`, value: `⠀\n**[${received[1].title}](${received[1].url})**\n${received[1].description}` }, image: received[1].image })
-                            pages.push({ name: "", emoji: "2️⃣", fields: { name: `2️⃣ Previous Topic (${received[2].time.replace("T", " @ ").replace(":00Z", "")})`, value: `⠀\n**[${received[2].title}](${received[2].url})**\n${received[2].description}` }, image: received[2].image })
+                            pages.push({ name: "", emoji: "1️⃣", fields: { name: `1️⃣ Previous Topic (${received[1].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[1].title}](${received[1].url})**\n${received[1].description}` }, image: received[1].image })
+                            pages.push({ name: "", emoji: "2️⃣", fields: { name: `2️⃣ Previous Topic (${received[2].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[2].title}](${received[2].url})**\n${received[2].description}` }, image: received[2].image })
                         }
                         catch { warnings.push("🔥 **Topics** Failed to get topics") }
 
@@ -836,7 +856,7 @@ module.exports = {
                             let received = await parser.reqget(`http://na.lodestonenews.com/news/notices`)
                             let fields = []
 
-                            fields.push({ name: `⛳ Latest Notice (${received[0].time.replace("T", " @ ").replace(":00Z", "")})`, value: `⠀\n**[${received[0].title}](${received[0].url})**` })
+                            fields.push({ name: `⛳ Latest Notice (${received[0].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[0].title}](${received[0].url})**` })
 
                             let desc = ""
                             for (let i = 1; i != 4; i++) desc += `• **[${received[i].title}](${received[i].url})**\n`
@@ -851,7 +871,7 @@ module.exports = {
                             let received = await parser.reqget(`http://na.lodestonenews.com/news/maintenance`)
                             let fields = []
 
-                            fields.push({ name: `⚙️ Latest Maintenance (${received[0].time.replace("T", " @ ").replace(":00Z", "")})`, value: `⠀\n**[${received[0].title}](${received[0].url})**` })
+                            fields.push({ name: `⚙️ Latest Maintenance (${received[0].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[0].title}](${received[0].url})**` })
 
                             let desc = ""
                             for (let i = 1; i != 4; i++) desc += `• **[${received[i].title}](${received[i].url})**\n`
@@ -869,39 +889,53 @@ module.exports = {
 
                         break
                     }
+                    /*
+                    case "psearch": {
+                        try {
+                            if (args.length <= 0) throw "**No search term** Who are you thinking about?"
+                            let received = await parser.reqget(`https://xivapi.com/character/search?name=${args.join(" ")}`) // &server=[server]
+
+                            console.log(received)
+                        }
+                        catch (error) { throw error }
+                        break
+                    }
+                    */
                     case "profile": {
                         try {
                             if (args[0] == "me") args[0] = 35425221
-                            if (args.length <= 0) throw "If you could start describing them, maybe I can remember... (An ID is needed to search)"
-                            if (isNaN(args[0])) throw "Those don't look like numbers! (ID must be an integer)"
+                            if (args.length <= 0) throw "**No search term** If you could start describing them, maybe I can remember..."
+                            if (isNaN(args[0])) throw "**ID must be an integer** Those don't look like numbers!"
 
                             let waitMessage = null
-                            message.channel.send(new discord.MessageEmbed({ title: "🙎 Character Lookup", color: "#ffff00", description: "**Please Wait...** I'll try to find them, kupo! This may take a moment..." })).then(msg => waitMessage = msg)
+                            message.channel.send(new discord.MessageEmbed({ title: "🙎 Character Lookup", color: "#ffff00", description: "**Please Wait** I'll try to find them, kupo! This may take a moment..." })).then(msg => waitMessage = msg)
 
-                            let received = await parser.reqget(`https://xivapi.com/character/${args[0]}`)
+                            let received = await parser.reqget(`https://xivapi.com/character/${args[0]}?data=FC`)
                             if (received == null || received.Message == "Character not found on Lodestone") {
                                 if (waitMessage != null) waitMessage.delete()
-                                throw `I'm sure whoever you're thinking of must be a nice person, kupo! (Profile doesn't exist)`
+                                throw `**Profile doesn't exist** I'm sure whoever you're thinking of must be a nice person, kupo!`
                             }
                             console.log(received)
 
                             if (waitMessage != null) waitMessage.delete()
 
                             let baseEmbed = new discord.MessageEmbed({
-                                title: `🙂 ${received.Character.Name} \`${received.Character.ID}\``,
+                                title: `🙂 ${received.FreeCompany != null ? `<${received.FreeCompany.Tag}>` : ""} ${received.Character.Name} \`${received.Character.ID}\``,
                                 description: received.Character.Bio != "-" ? received.Character.Bio : "",
                                 color: "#03fce8",
                             })
 
                             let pages = []
 
+                            // General profile
                             let profileFields = [
                                 { name: "<:group:868274639921614919> Race/Clan", value: `${received.Character.Gender == 1 ? "♂️" : received.Character.Gender == 2 ? "♀️" : received.Character.Gender} ${playerTown[received.Character.Town].icon} **${playerRaces[received.Character.Race] != null ? playerRaces[received.Character.Race] : received.Character.Race}**\n${playerTribes[received.Character.Tribe] != null ? playerTribes[received.Character.Tribe] : received.Character.Tribe}\n${received.Character.Nameday}`, inline: true },
                                 { name: "<:lfp:868274640076832768> World/Data Center", value: `**${received.Character.Server}** (${received.Character.DC})`, inline: true },
                                 { name: "⠀", value: "⠀", inline: true },
-                                { name: "💼 Job", value: `**${jobList[received.Character.ActiveClassJob.UnlockedState.ID != null ? received.Character.ActiveClassJob.UnlockedState.ID : 36].jobico} ${received.Character.ActiveClassJob.UnlockedState.Name}** Lv. ${received.Character.ActiveClassJob.Level}\n${received.Character.ActiveClassJob.ExpLevel} / ${received.Character.ActiveClassJob.ExpLevelMax} EXP`, inline: true },
+                                { name: "💼 Job", value: `**${jobList[received.Character.ActiveClassJob.UnlockedState.ID != null ? received.Character.ActiveClassJob.UnlockedState.ID : 36].jobico} ${received.Character.ActiveClassJob.UnlockedState.Name}** Lv. ${received.Character.ActiveClassJob.Level}\n${intl.format(received.Character.ActiveClassJob.ExpLevel)} / ${intl.format(received.Character.ActiveClassJob.ExpLevelMax)} **EXP**`, inline: true },
                             ]
 
+                            // Grand Company
                             if (received.Character.GrandCompany != null) {
                                 //profileFields.push({ name: "⠀", value: "⠀", inline: true })
                                 profileFields.push({ name: "Grand Company", value: `**${playerGC[received.Character.GrandCompany.NameID].company}**\n${gcTitles[received.Character.GrandCompany.RankID].replace("<t>", playerGC[received.Character.GrandCompany.NameID].title)}`, inline: true })
@@ -922,13 +956,13 @@ module.exports = {
                                 let id = job.UnlockedState.ID != null ? job.UnlockedState.ID : 36 // blue mage unlock ID is null normally
 
                                 switch (jobList[id].type) {
-                                    case "tank": { tankDesc += `• ${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
-                                    case "healer": { healerDesc += `• ${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
-                                    case "melee": { meleeDesc += `• ${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
-                                    case "physical": { physicalDesc += `• ${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
-                                    case "magical": { magicalDesc += `• ${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
-                                    case "crafter": { crafterDesc += `• ${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
-                                    case "gatherer": { gathererDesc += `• ${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
+                                    case "tank": { tankDesc += `${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
+                                    case "healer": { healerDesc += `${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
+                                    case "melee": { meleeDesc += `${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
+                                    case "physical": { physicalDesc += `${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
+                                    case "magical": { magicalDesc += `${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
+                                    case "crafter": { crafterDesc += `${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
+                                    case "gatherer": { gathererDesc += `${jobList[id].jobico} ${jobList[id].long} ${job.Level != 0 ? job.Level : "-"}\n`; break }
                                 }
                             })
 
@@ -947,18 +981,45 @@ module.exports = {
                                     ]
                             })
 
+                            // FC
+                            if (received.FreeCompany != null) {
+                                let fcFields = [
+                                    { name: `🎌 Free Company`, value: `**${received.FreeCompany.Name}**\n**<${received.FreeCompany.Tag}>**\n${received.FreeCompany.Slogan != "" ? `${received.FreeCompany.Slogan}\n` : ""}\`${received.FreeCompany.ID}\``, inline: true },
+                                    { name: "⠀", value: "⠀", inline: true },
+                                    { name: "<:lfp:868274640076832768> Server/Data Center", value: `**${received.FreeCompany.Server}** (${received.FreeCompany.DC})`, inline: true },
+                                    { name: "📛 Company Info", value: `**Founded** ${new Date(received.FreeCompany.Formed * 1000).toDateString()}\n**Active Members** ${received.FreeCompany.ActiveMemberCount}\n**Active** ${received.FreeCompany.Active}\n${received.FreeCompany.Recruitment != "" ? `**Recruitment** ${received.FreeCompany.Recruitment}\n` : ""}**Rank** ${received.FreeCompany.Rank}`, inline: true },
+                                ]
+
+                                if (received.FreeCompany.Estate.Name != null) {
+                                    fcFields.push({ name: "⠀", value: "⠀", inline: true })
+                                    fcFields.push({ name: `🏡 Estate`, value: `**${received.FreeCompany.Estate.Name}**\n${received.FreeCompany.Estate.Greeting}\n${received.FreeCompany.Estate.Plot}`, inline: true })
+                                }
+
+                                pages.push({ name: "Free Company", emoji: "🎌", fields: fcFields, thumbnail: received.FreeCompany.Crest[received.FreeCompany.Crest.length - 1] })
+                            }
+
+                            // Eureka/Bozja
+                            if (received.Character.ClassJobsElemental.Level != 0 && received.Character.ClassJobsElemental.ExpLevelMax != 0 || received.Character.ClassJobsBozjan.Level != null) {
+                                // 🔯
+                                let relicFields = []
+
+                                if (received.Character.ClassJobsElemental.Level != 0 && received.Character.ClassJobsElemental.ExpLevelMax != 0) { relicFields.push({ name: "<:eureka:869783079210872852> The Forbidden Land, Eureka", value: `<:eurekaexp:869783079147941888> **Elemental Level** ${received.Character.ClassJobsElemental.Level}\n${intl.format(received.Character.ClassJobsElemental.ExpLevel)} / ${intl.format(received.Character.ClassJobsElemental.ExpLevelMax)} **EXP**` }) }
+                                if (received.Character.ClassJobsBozjan.Level != null) { relicFields.push({ name: "<:bozja:869784982233702451> Bozjan Resistance", value: `<:mettle:869785520136396810> **Resistance Rank** ${received.Character.ClassJobsBozjan.Level}\n${received.Character.ClassJobsBozjan.Level != 25 ? `${intl.format(received.Character.ClassJobsBozjan.Mettle)} **Mettle**` : "**Max Mettle**"}` }) }
+
+                                pages.push({ name: "Eureka/Bozja", emoji: "🔯", fields: relicFields })
+                            }
+
                             pagify.pagify(baseEmbed, message, "🙂", pages)
                         }
-                        catch (error) {
-                            message.channel.send(new discord.MessageEmbed({ title: "🙎 Character Lookup", color: "#ff0000", description: error.message != null ? `Sorry, kupo! There was a problem displaying that!\n\n${error.message}` : error }))
-                            console.log(error)
-                        }
-
+                        catch (error) { throw error }
                         break
                     }
                 }
             }
-            catch (error) { message.channel.send("❌ " + error) }
+            catch (error) {
+                message.channel.send(new discord.MessageEmbed({ title: "🔍 Sorry, kupo!", color: "#ff0000", description: error.message != null ? `There was a problem displaying that!\n\n${error.message}` : error }))
+                if (error.message != null) console.log(error)
+            }
         }
         else message.channel.send(new discord.MessageEmbed({
             title: "☄️ Search Final Fantasy XIV",

@@ -3,13 +3,15 @@ let http = require("http")
 
 module.exports = {
     /* 
-        parse parameters
-        -   takes in something like "[string:Hello World,integer:5,table:{}]" and makes it into
+        Parse parameters
+        -   Takes in something like "[string:Hello World,integer:5,table:"{}"]" and makes it into
         {
             "string": "Hello World",
-            "integer": 5,
-            "table": {}
+            "integer": "5",
+            "table": "{}"
         }
+
+        Yes, the integer and table are strings but you can convert them using parseInt() and JSON.parse() respectively
     */
     parseparams(args, lower = true) {
         let paramList = {}
@@ -33,8 +35,10 @@ module.exports = {
     },
 
     /* 
-        replacehtml
-        -   replaces html tags in a string
+        ReplaceHTML
+        -   Replaces html tags in a string
+        -   Tuples are what x will be replaced by y ["replaceMe", "withThis"]
+        -   all just removes the rest of the html tags all together
     */
     replacehtml(str, tuples, all = false) {
         tuples.forEach(arr => str = str.replace(arr[0], (arr[1] != null) ? arr[1] : ""))
@@ -44,7 +48,7 @@ module.exports = {
 
     /*
         reqget
-        - url
+        - async/await get thing
     */
     reqget(url) {
         let type = null
