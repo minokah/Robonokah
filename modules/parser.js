@@ -34,6 +34,31 @@ module.exports = {
         return paramList
     },
 
+    /*
+        EmojiNumber
+
+        Integer to discord :one: :two: :three:
+    */
+
+    emojiNumber(num) {
+        let numero = null
+        switch (num) {
+            case 0: { numero = "0️⃣"; break }
+            case 1: { numero = "1️⃣"; break }
+            case 2: { numero = "2️⃣"; break }
+            case 3: { numero = "3️⃣"; break }
+            case 4: { numero = "4️⃣"; break }
+            case 5: { numero = "5️⃣"; break }
+            case 6: { numero = "6️⃣"; break }
+            case 7: { numero = "7️⃣"; break }
+            case 8: { numero = "8️⃣"; break }
+            case 9: { numero = "9️⃣"; break }
+            case 10: { numero = "🔟"; break }
+            case "A": { numero = "🅰️"; break } // XIV plugin exception, triple triad has an ace "A"
+        }
+        return numero
+    },
+
     /* 
         ReplaceHTML
         -   Replaces html tags in a string

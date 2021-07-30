@@ -42,7 +42,7 @@ module.exports = {
             }
 
             if (data.emoji == current) {
-                if (data.desc != null) embed.setDescription(data.desc)
+                if (data.desc != null) embed.setDescription(data.desc + "\n⠀")
                 else embed.setDescription("")
                 if (data.image != null) embed.setImage(data.image)
                 else embed.setImage("")
