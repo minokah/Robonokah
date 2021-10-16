@@ -1,21 +1,36 @@
 const { MessageActionRow, MessageSelectMenu } = require("discord.js")
 
-
 module.exports = {
-    /* 
-        formatField
-
+    /*
+        formatEmbed
+        
         Formats the string to how I want it to appear on Discord
 
-        field: a string
+        embed: MessageEmbed
     */
+    formatEmbed(embed) {
+        let fields = embed.fields
+        if (fields.length != null) {
+            // Add padding at the bottom of a line if it ends with \n
+            // In lists with \n at the end, remove that so it doesn't have an extra line in the list
+            for (let i = 0; i != fields.length; i++) {
+                if (fields[i].name != "⠀") {
+                    fields[i].value = `> ${fields[i].value}`
+                    fields[i].value = fields[i].value.replace(/\n/g, "\n> ")
+                    if (fields[i].value[fields[i].value.length - 1] == " ") fields[i].value = fields[i].value.substr(0, fields[i].value.length - 3) // shave off 3 empty chars at bottom
+                    fields[i].value += "\n⠀"
+                }
+            }
+        }
+        else {
+            fields.value = `> ${fields.value}`
+            fields.value = fields.value.replace(/\n/g, "\n> ")
+            if (fields.value[fields.value.length - 1] == " ") fields.value = fields.value.substr(0, fields.value.length - 3)
+            fields.value += "\n⠀"
+        }
 
-    formatField(field) {
-        field = `> ${field}`
-        field = field.replace(/\n/g, "\n> ")
-        if (field[field.length - 1] == " ") field = field.substr(0, field.length - 3)
-        field += "\n⠀"
-        return field
+        embed.setFields(fields)
+        return embed
     },
 
     /* 
@@ -27,29 +42,35 @@ module.exports = {
         pageFields: a list of MessageEmbeds with each of the keys being a drop down option
     */
 
-    async pagify(interaction, pageFields, page = null) {
-        pageFields = this.formatFields(pageFields)
-        let row = new MessageActionRow()
-        let pageMenu = new MessageSelectMenu()
-            .setCustomId(String(interaction.id))
-            .setPlaceholder("Select page")
+    async pagify(interaction, pageEmbeds, page = null) {
+        try {
+            Object.keys(pageEmbeds).forEach(embed => {
+                module.exports.formatEmbed(pageEmbeds[embed])
+            });
 
-        Object.keys(pageFields).forEach(page => {
-            pageMenu.addOptions({
-                label: page,
-                value: page,
-            })
-        });
+            let row = new MessageActionRow()
+            let pageMenu = new MessageSelectMenu()
+                .setCustomId(String(interaction.id))
+                .setPlaceholder("Select page")
 
-        row.addComponents(pageMenu)
+            Object.keys(pageEmbeds).forEach(page => {
+                pageMenu.addOptions({
+                    label: page,
+                    value: page,
+                })
+            });
 
-        interaction.client.on('interactionCreate', async upd => {
-            if (upd.isSelectMenu() && upd.customId === String(interaction.id)) {
-                await upd.update({ embeds: [pageFields[upd.values[0]]], components: [row] })
-            }
-        });
+            row.addComponents(pageMenu)
 
-        await interaction.reply({ embeds: [pageFields[page != null ? page : Object.keys(pageFields)[0]]], components: [row] })
+            interaction.client.on('interactionCreate', async upd => {
+                if (upd.isSelectMenu() && upd.customId === String(interaction.id)) {
+                    await upd.update({ embeds: [pageEmbeds[upd.values[0]]], components: [row] })
+                }
+            });
+
+            await interaction.reply({ embeds: [pageEmbeds[page != null ? page : Object.keys(pageEmbeds)[0]]], components: [row] })
+        }
+        catch (error) { console.log(error) }
     }
 }
 
