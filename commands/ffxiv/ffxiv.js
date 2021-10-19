@@ -57,13 +57,19 @@ module.exports = {
             .addIntegerOption(option => option.setName('id').setDescription('ID of the leve').setRequired(true))
         )
         .addSubcommand(sub => sub
+            .setName("news")
+            .setDescription("Display latest news from the Lodestone")
+        )
+        .addSubcommand(sub => sub
             .setName("character")
             .setDescription("Search for a character with an ID")
             .addIntegerOption(option => option.setName('id').setDescription('ID of the character').setRequired(true))
         )
         .addSubcommand(sub => sub
-            .setName("news")
-            .setDescription("Display latest news from the Lodestone")
+            .setName("csearch")
+            .setDescription("Search for characters with a name")
+            .addStringOption(option => option.setName('name').setDescription('Name of the character').setRequired(true))
+            .addStringOption(option => option.setName('server').setDescription('Server to search for'))
         ),
     async execute(interaction) {
         try {
@@ -457,6 +463,17 @@ module.exports = {
                         let embedFields = {}
                         let mainFields = [{ name: "💠 Information", value: `**Level ${instanceData.min_lvl} ${instanceData.category}**\n${instanceData.min_ilvl != null ? `**Item Level** ${instanceData.min_ilvl}\n` : ""}**Time** ${instanceData.time} minutes`, inline: true }]
 
+                        mainFields.push({ name: "👥 Party", value: `<:tank:866470965751971890> x ${instanceData.category == "Trials" ? "2" : "1"}\n<:healer:866470993252712458> x ${instanceData.healer}\n<:dps:866471014505250877> x ${instanceData.melee + instanceData.ranged}\n`, inline: true })
+
+                        embedFields["🏡 Instance"] = new MessageEmbed({
+                            title: `🏡 ${instanceData.name}  \`${instanceData.id}\``,
+                            color: "#03fce8",
+                            description: parser.replacehtml(instanceData.description, htmlToReplace),
+                            fields: mainFields,
+                            thumbnail: { url: `https://garlandtools.org/files/icons/instance/type/${instanceData.categoryIcon}.png` },
+                            image: { url: `https://garlandtools.org/files/icons/instance/${instanceData.fullIcon}.png` }
+                        })
+
                         if (instanceData.rewards != null) {
                             let rewardsDesc = ""
 
@@ -468,18 +485,14 @@ module.exports = {
                                 }
                             });
 
-                            if (rewardsDesc != "") mainFields.push({ name: `🎁 Possible Rewards`, value: rewardsDesc, inline: true })
+                            if (rewardsDesc != "") {
+                                embedFields["🎁 Possible Rewards"] = new MessageEmbed({
+                                    title: `🏡 ${instanceData.name}  \`${instanceData.id}\``,
+                                    color: "#03fce8",
+                                    fields: { name: "🎁 Possible Rewards", value: rewardsDesc, inline: true }
+                                })
+                            }
                         }
-                        mainFields.push({ name: "👥 Party", value: `<:tank:866470965751971890> x ${instanceData.category == "Trials" ? "2" : "1"}\n<:healer:866470993252712458> x ${instanceData.healer}\n<:dps:866471014505250877> x ${instanceData.melee + instanceData.ranged}\n`, inline: true })
-
-                        embedFields["🏡 Instance"] = new MessageEmbed({
-                            title: `🏡 ${instanceData.name}  \`${instanceData.id}\``,
-                            color: "#03fce8",
-                            description: parser.replacehtml(instanceData.description, htmlToReplace),
-                            fields: mainFields,
-                            thumbnail: { url: `https://garlandtools.org/files/icons/instance/type/${instanceData.categoryIcon}.png` },
-                            image: { url: `https://garlandtools.org/files/icons/instance/${instanceData.fullIcon}.png` }
-                        })
 
                         if (instanceData.coffers != null) {
                             let cofferFields = []
@@ -685,29 +698,24 @@ module.exports = {
                         }
                         fields.push({ name: `📌 Previous Topics`, value: desc })
 
-                        pages["🔥 Topics"] = new MessageEmbed({
-                            title: "📰 Lodestone News",
+                        pages["📌 Topics"] = new MessageEmbed({
+                            title: "📢 Lodestone News",
                             color: "#03fce8",
                             description: "Here are the latest topics, kupo!",
                             fields: fields,
                             image: { url: received[0].image }
                         })
 
-                        pages[`Test ${recieved[1].title}`] = new MessageEmbed({
-                            title: "📰 Lodestone News",
-                            color: "#03fce8",
-                            fields: { name: `1️⃣ Previous Topic (${received[1].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[1].title}](${received[1].url})**\n${received[1].description}` },
-                            image: { url: received[1].image }
-                        })
-
-                        pages[`Test ${recieved[1].title}`] = new MessageEmbed({
-                            title: "📰 Lodestone News",
-                            color: "#03fce8",
-                            fields: { name: `2️⃣ Previous Topic (${received[2].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[2].title}](${received[2].url})**\n${received[2].description}` },
-                            image: { url: received[1].image }
-                        })
+                        for (let i = 1; i != 3; i++) {
+                            pages[`${parser.emojiNumber(i)} ${received[i].title}`] = new MessageEmbed({
+                                title: "📢 Lodestone News",
+                                color: "#03fce8",
+                                fields: { name: `${parser.emojiNumber(i)} Previous Topic (${received[i].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[i].title}](${received[i].url})**\n${received[i].description}` },
+                                image: { url: received[i].image }
+                            })
+                        }
                     }
-                    catch { warnings.push("🔥 **Topics** Failed to get topics") }
+                    catch { warnings.push("📰 **Topics** Failed to get topics") }
 
                     // Notices
                     try {
@@ -721,7 +729,7 @@ module.exports = {
                         fields.push({ name: `📌 Previous Notices`, value: desc })
 
                         pages["⛳ Notices"] = new MessageEmbed({
-                            title: "📰 Lodestone News",
+                            title: "📢 Lodestone News",
                             color: "#03fce8",
                             fields: fields,
                         })
@@ -740,7 +748,7 @@ module.exports = {
                         fields.push({ name: `📌 Previous Maintenance`, value: desc })
 
                         pages[`⚙️ Maintenance (${received[0].time.split("T")[0]})`] = new MessageEmbed({
-                            title: "📰 Lodestone News",
+                            title: "📢 Lodestone News",
                             color: "#03fce8",
                             fields: fields,
                         })
@@ -869,7 +877,48 @@ module.exports = {
                     }
                     catch (error) { throw error }
                     break
-                default: await interaction.reply('Pong!')
+                case "csearch":
+                    try {
+                        let name = interaction.options.getString("name")
+                        let server = interaction.options.getString("server")
+
+                        await interaction.reply({ content: "wait", ephemeral: true })
+                        
+                        let received = await parser.reqget(`https://xivapi.com/character/search?name=${name}${server != null ? `&server=[${server}]` : ""}`)
+                        if (received == null || received.Pagination.Results == 0) throw `That character or server probably doesn't exist`
+
+                        let results = received.Results
+                        
+                        let fields = []
+
+                        let dc = {}
+                        for (let i = 0; i != results.length; i++) {
+                            let server = results[i].Server.replace("(", "").replace(")", "").split(' ')
+                            console.log(server)
+                            if (dc["test"] == null) dc["test"] = ""
+
+                            dc["test"] += `\`${results[i].ID} Test World\` ${"test"}\n`
+                        }
+
+                        console.log(dc)
+
+                        Object.keys(dc).forEach(center => fields.push({name: center, value: dc[center], inline: true}))
+                        console.log(fields)
+                        
+                        await interaction.editReply({
+                            embeds: [
+                                new MessageEmbed({
+                                    title: "🕵️ " + name,
+                                    color: "#00a8ff",
+                                    description: `${name} can be found on...`,
+                                    fields: fields
+                                })
+                            ]
+                        })
+                    }
+                    catch (error) { console.log(error); throw error }
+                    break
+                default: await interaction.reply('Final Fantasy XIV Search')
             }
         }
         catch (error) { await interaction.reply({ embeds: [new MessageEmbed({ color: "#ff0000", description: error.message != null ? error.message : error })], ephemeral: true }) }
