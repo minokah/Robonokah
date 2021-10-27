@@ -306,6 +306,13 @@ module.exports = {
         19: "<t> Champion"
     },
 
+    // Data centers and worlds
+    dataCenters: {
+        "🌎 North America": ["Aether", "Primal", "Crystal"],
+        "🌏 Japan": ["Elemental", "Gaia", "Mana"],
+        "🌍 Europe": ["Chaos", "Light"]
+    },
+
     /*
         Other
     */

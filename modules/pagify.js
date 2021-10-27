@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageSelectMenu } = require("discord.js")
+const { MessageEmbed, MessageActionRow, MessageSelectMenu } = require("discord.js")
 
 module.exports = {
     /*
@@ -42,8 +42,10 @@ module.exports = {
         pageFields: a list of MessageEmbeds with each of the keys being a drop down option
     */
 
-    async pagify(interaction, pageEmbeds, page = null) {
+    async pagify(interaction, pageEmbeds, defer = false) {
         try {
+            let user = interaction.member.id
+
             Object.keys(pageEmbeds).forEach(embed => {
                 module.exports.formatEmbed(pageEmbeds[embed])
             });
@@ -63,12 +65,14 @@ module.exports = {
             row.addComponents(pageMenu)
 
             interaction.client.on('interactionCreate', async upd => {
-                if (upd.isSelectMenu() && upd.customId === String(interaction.id)) {
-                    await upd.update({ embeds: [pageEmbeds[upd.values[0]]], components: [row] })
+                if (upd.member.id == user) {
+                    if (upd.isSelectMenu() && upd.customId === String(interaction.id)) await upd.update({ embeds: [pageEmbeds[upd.values[0]]], components: [row] })
                 }
+                else await interaction.followUp({ embeds: [new MessageEmbed({ color: "#ff0000", description: `Only ${interaction.guild.members.cache.get(user)} can change the page` })], ephemeral: true })
             });
 
-            await interaction.reply({ embeds: [pageEmbeds[page != null ? page : Object.keys(pageEmbeds)[0]]], components: [row] })
+            if (!defer) await interaction.reply({ embeds: [pageEmbeds[Object.keys(pageEmbeds)[0]]], components: [row] })
+            else await interaction.editReply({ embeds: [pageEmbeds[Object.keys(pageEmbeds)[0]]], components: [row] })
         }
         catch (error) { console.log(error) }
     }

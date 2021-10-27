@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders')
 const { MessageEmbed } = require("discord.js")
 const { formatEmbed, pagify } = require('../../modules/pagify')
-const { categoryList, jobList, lovType, retainerCities, achievementCategories, playerRaces, playerTribes, playerGuardian, playerTown, playerGC, gcTitles, htmlToReplace, intl } = require("../ffxiv/data.js")
+const { categoryList, jobList, lovType, retainerCities, achievementCategories, playerRaces, playerTribes, playerGuardian, playerTown, playerGC, gcTitles, htmlToReplace, intl, dataCenters } = require("../ffxiv/data.js")
 const parser = require("../../modules/parser")
 
 
@@ -109,7 +109,7 @@ module.exports = {
                         let term = interaction.options.getString("name")
                         let parsedType = interaction.options.getString("type")
                         let received = await parser.reqget(`https://www.garlandtools.org/api/search.php?text=${term}&lang=en`)
-                        if (received == null) throw `No results found for '${term}'`
+                        if (received == null) throw `No results for \`${term}\` found`
 
                         let results = []
 
@@ -119,7 +119,7 @@ module.exports = {
                         if (results.length <= 0) {
                             await interaction.reply({
                                 ephemeral: true,
-                                embeds: [new MessageEmbed({ color: "#ff0000", description: `No results for '${term}' found` })]
+                                embeds: [new MessageEmbed({ color: "#ff0000", description: `No results for \`${term}\` found` })]
                             })
                             break
                         }
@@ -707,7 +707,7 @@ module.exports = {
                         })
 
                         for (let i = 1; i != 3; i++) {
-                            pages[`${parser.emojiNumber(i)} ${received[i].title}`] = new MessageEmbed({
+                            pages[`ㅤ${parser.emojiNumber(i)} ${received[i].title}`] = new MessageEmbed({
                                 title: "📢 Lodestone News",
                                 color: "#03fce8",
                                 fields: { name: `${parser.emojiNumber(i)} Previous Topic (${received[i].time.replace("T", " @ ").replace(":00Z", "")})`, value: `**[${received[i].title}](${received[i].url})**\n${received[i].description}` },
@@ -764,6 +764,7 @@ module.exports = {
                         //if (args[0] == "me") args[0] = 35425221
                         let id = interaction.options.getInteger("id")
 
+                        await interaction.deferReply()
 
                         let received = await parser.reqget(`https://xivapi.com/character/${id}?data=FC`)
                         if (received == null || received.Message == "Character not found on Lodestone") throw `That character ${id} probably doesn't exist, or failed to get data from Lodestone`
@@ -873,50 +874,57 @@ module.exports = {
                             })
                         }
 
-                        pagify(interaction, pages)
+                        pagify(interaction, pages, true)
                     }
                     catch (error) { throw error }
                     break
                 case "csearch":
                     try {
-                        let name = interaction.options.getString("name")
+                        let name = interaction.options.getString("name").split(" ")
+                        for (let i = 0; i != name.length; i++) name[i] = name[i][0].toUpperCase() + name[i].substr(1).toLowerCase()
+                        name = name.join(" ")
                         let server = interaction.options.getString("server")
 
-                        await interaction.reply({ content: "wait", ephemeral: true })
+                        await interaction.deferReply()
                         
                         let received = await parser.reqget(`https://xivapi.com/character/search?name=${name}${server != null ? `&server=[${server}]` : ""}`)
-                        if (received == null || received.Pagination.Results == 0) throw `That character or server probably doesn't exist`
-
+                        console.log(received)
+                        if (received == null || received.Pagination.Results.length == 0) throw `That character or server probably doesn't exist`
+                        
                         let results = received.Results
                         
-                        let fields = []
-
+                        let fields = {}
                         let dc = {}
-                        for (let i = 0; i != results.length; i++) {
-                            let server = results[i].Server.replace("(", "").replace(")", "").split(' ')
-                            console.log(server)
-                            if (dc["test"] == null) dc["test"] = ""
+                        let sorted = {}
 
-                            dc["test"] += `\`${results[i].ID} Test World\` ${"test"}\n`
+                        for (let i = 0; i != results.length; i++) {
+                            let server = results[i].Server.replace("(", "").replace(")", "").split(String.fromCharCode(160)) // the space between the server and the dc is not actually a regular space (char 32)...
+                            if (dc[server[1]] == null) dc[server[1]] = ""
+
+                            dc[server[1]] += `\`${results[i].ID}\` ${server[0]}\n`
                         }
 
-                        console.log(dc)
-
-                        Object.keys(dc).forEach(center => fields.push({name: center, value: dc[center], inline: true}))
-                        console.log(fields)
-                        
-                        await interaction.editReply({
-                            embeds: [
-                                new MessageEmbed({
-                                    title: "🕵️ " + name,
-                                    color: "#00a8ff",
-                                    description: `${name} can be found on...`,
-                                    fields: fields
-                                })
-                            ]
+                        Object.keys(dc).forEach(center => {
+                            Object.keys(dataCenters).forEach(region => {
+                                if (dataCenters[region].includes(center)) {
+                                    if (sorted[region] == null) sorted[region] = []
+                                    sorted[region].push({name: center, value: dc[center], inline: true})
+                                }
+                            })
                         })
+
+                        Object.keys(sorted).forEach(region => {
+                            fields[region] = new MessageEmbed({
+                                title: "🕵️ " + name,
+                                color: "#00a8ff",
+                                description: `${name} can be found on...`,
+                                fields: sorted[region]
+                            })
+                        })
+
+                        pagify(interaction, fields, true)
                     }
-                    catch (error) { console.log(error); throw error }
+                    catch (error) { throw error }
                     break
                 default: await interaction.reply('Final Fantasy XIV Search')
             }
