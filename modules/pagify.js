@@ -1,10 +1,27 @@
 const { MessageEmbed, MessageActionRow, MessageSelectMenu } = require("discord.js")
+const { userMention } = require("@discordjs/builders")
 
 module.exports = {
     /*
+        formatField
+        
+        Formats a field to how I want it to appear on Discord
+
+        field: field that goes inside a MessageEmbed
+    */
+    formatField(field) {
+        field.value = `> ${field.value}`
+        field.value = field.value.replace(/\n/g, "\n> ")
+        if (field.value[field.value.length - 1] == " ") field.value = field.value.substr(0, field.value.length - 3) // shave off 3 empty chars at bottom
+        field.value += "\n⠀"
+
+        return field
+    },
+
+    /*
         formatEmbed
         
-        Formats the string to how I want it to appear on Discord
+        formatField but for all fields
 
         embed: MessageEmbed
     */
@@ -14,20 +31,10 @@ module.exports = {
             // Add padding at the bottom of a line if it ends with \n
             // In lists with \n at the end, remove that so it doesn't have an extra line in the list
             for (let i = 0; i != fields.length; i++) {
-                if (fields[i].name != "⠀") {
-                    fields[i].value = `> ${fields[i].value}`
-                    fields[i].value = fields[i].value.replace(/\n/g, "\n> ")
-                    if (fields[i].value[fields[i].value.length - 1] == " ") fields[i].value = fields[i].value.substr(0, fields[i].value.length - 3) // shave off 3 empty chars at bottom
-                    fields[i].value += "\n⠀"
-                }
+                if (fields[i].name != "⠀") fields[i] = this.formatField(fields[i])
             }
         }
-        else {
-            fields.value = `> ${fields.value}`
-            fields.value = fields.value.replace(/\n/g, "\n> ")
-            if (fields.value[fields.value.length - 1] == " ") fields.value = fields.value.substr(0, fields.value.length - 3)
-            fields.value += "\n⠀"
-        }
+        else fields = this.formatField(fields)
 
         embed.setFields(fields)
         return embed
@@ -68,8 +75,8 @@ module.exports = {
                 if (upd.member.id == user) {
                     if (upd.isSelectMenu() && upd.customId === String(interaction.id)) await upd.update({ embeds: [pageEmbeds[upd.values[0]]], components: [row] })
                 }
-                else await interaction.followUp({ embeds: [new MessageEmbed({ color: "#ff0000", description: `Only ${interaction.guild.members.cache.get(user)} can change the page` })], ephemeral: true })
-            });
+                else await interaction.followUp({ embeds: [new MessageEmbed({ color: "#ff0000", description: `Only ${userMention(user)} can change the page` })], ephemeral: true })
+            })
 
             if (!defer) await interaction.reply({ embeds: [pageEmbeds[Object.keys(pageEmbeds)[0]]], components: [row] })
             else await interaction.editReply({ embeds: [pageEmbeds[Object.keys(pageEmbeds)[0]]], components: [row] })

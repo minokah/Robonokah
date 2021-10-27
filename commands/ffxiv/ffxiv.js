@@ -118,7 +118,6 @@ module.exports = {
                         })
                         if (results.length <= 0) {
                             await interaction.reply({
-                                ephemeral: true,
                                 embeds: [new MessageEmbed({ color: "#ff0000", description: `No results for \`${term}\` found` })]
                             })
                             break
@@ -886,13 +885,13 @@ module.exports = {
                         let server = interaction.options.getString("server")
 
                         await interaction.deferReply()
-                        
+
                         let received = await parser.reqget(`https://xivapi.com/character/search?name=${name}${server != null ? `&server=[${server}]` : ""}`)
                         console.log(received)
                         if (received == null || received.Pagination.Results.length == 0) throw `That character or server probably doesn't exist`
-                        
+
                         let results = received.Results
-                        
+
                         let fields = {}
                         let dc = {}
                         let sorted = {}
@@ -908,7 +907,7 @@ module.exports = {
                             Object.keys(dataCenters).forEach(region => {
                                 if (dataCenters[region].includes(center)) {
                                     if (sorted[region] == null) sorted[region] = []
-                                    sorted[region].push({name: center, value: dc[center], inline: true})
+                                    sorted[region].push({ name: center, value: dc[center], inline: true })
                                 }
                             })
                         })
