@@ -1,3 +1,10 @@
+/*
+    FFXIV Search Tool
+
+    Search things from FFXIV
+    Item, characters, instances, quests, you name it
+*/
+
 const { SlashCommandBuilder } = require('@discordjs/builders')
 const { MessageEmbed } = require("discord.js")
 const { formatEmbed, pagify } = require('../../modules/pagify')
@@ -74,6 +81,7 @@ module.exports = {
     async execute(interaction) {
         try {
             switch (interaction.options.getSubcommand()) {
+                // Final Fantasy XIV copypasta c:
                 case "ad":
                     interaction.reply({
                         embeds: [
@@ -90,6 +98,8 @@ module.exports = {
                         ]
                     })
                     break
+
+                // Show an image of a map/location in the game
                 case "map":
                     let map = interaction.options.getString("name")
                     let url = map.replace(/\s/g, "%20")
@@ -104,6 +114,8 @@ module.exports = {
                         ]
                     })
                     break
+                
+                // Item searching!
                 case "search":
                     try {
                         let term = interaction.options.getString("name")
@@ -164,6 +176,8 @@ module.exports = {
                         break
                     }
                     catch (error) { throw error }
+                
+                // Show item info
                 case "item":
                     try {
                         let id = interaction.options.getInteger("id")
@@ -338,11 +352,13 @@ module.exports = {
                                     if (nqCount == 5 && hqCount == 5) break
                                 }
 
+                                // Normal quality
                                 let nqDesc = ""
                                 nqListings.forEach(entry => {
                                     nqDesc += `${retainerCities[entry.retainerCity] != null ? retainerCities[entry.retainerCity] : entry.retainerCity} **${entry.worldName != null ? entry.worldName : entry.retainerName}**: <:gil:866367940517560390> **${entry.pricePerUnit * entry.quantity}** • ${entry.pricePerUnit} gil x ${entry.quantity}${entry.worldName != null ? ` • \`${entry.retainerName}\`\n` : "\n"}`
                                 })
 
+                                // High quality
                                 let hqDesc = ""
                                 hqListings.forEach(entry => {
                                     hqDesc += `${retainerCities[entry.retainerCity] != null ? retainerCities[entry.retainerCity] : entry.retainerCity} **${entry.worldName != null ? entry.worldName : entry.retainerName}**: <:gil:866367940517560390> **${entry.pricePerUnit * entry.quantity}** • ${entry.pricePerUnit} gil x ${entry.quantity}${entry.worldName != null ? ` • \`${entry.retainerName}\`\n` : "\n"}`
@@ -387,6 +403,8 @@ module.exports = {
                         break
                     }
                     catch (error) { throw error }
+                
+                // Action information
                 case "action":
                     try {
                         let id = interaction.options.getInteger("id")
@@ -425,6 +443,8 @@ module.exports = {
                         break
                     }
                     catch (error) { throw error }
+                
+                // Achievement and rewards info
                 case "achievement":
                     try {
                         let id = interaction.options.getInteger("id")
@@ -450,6 +470,8 @@ module.exports = {
                         break
                     }
                     catch (error) { throw error }
+                
+                // Instance info
                 case "instance":
                     try {
                         let id = interaction.options.getInteger("id")
@@ -545,6 +567,8 @@ module.exports = {
                     }
                     catch (error) { throw error }
                     break
+                
+                // Quest information
                 case "quest":
                     try {
                         let id = interaction.options.getInteger("id")
@@ -628,6 +652,8 @@ module.exports = {
                     }
                     catch (error) { throw error }
                     break
+                
+                // Levequests
                 case "leve":
                     try {
                         let id = interaction.options.getInteger("id")
@@ -677,6 +703,8 @@ module.exports = {
                     }
                     catch (error) { throw error }
                     break
+                
+                // Lodestone updates about maintenance, topics, notices
                 case "news":
                     let pages = {}
                     let warnings = []
@@ -758,6 +786,8 @@ module.exports = {
                     else pagify(interaction, pages)
 
                     break
+                
+                // Get character information (and FC if they're in one)
                 case "character":
                     try {
                         //if (args[0] == "me") args[0] = 35425221
@@ -877,6 +907,8 @@ module.exports = {
                     }
                     catch (error) { throw error }
                     break
+                
+                // Character searching across data centers and regions
                 case "csearch":
                     try {
                         let name = interaction.options.getString("name").split(" ")
